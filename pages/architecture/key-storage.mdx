@@ -1,0 +1,146 @@
+# Key Storage Pattern
+
+This document describes the canonical key storage pattern used across all OmneDAO products (ARC wallet, foundation site, and any future frontends). The pattern provides **XSS-resilient mnemonic storage** using IndexedDB and the Web Crypto API.
+
+## Architecture
+
+```
+┌────────────────────────────────────────────┐
+│              Browser                        │
+│                                            │
+│  ┌────────────────────────────────────┐    │
+│  │          Application               │    │
+│  │  (ARC, Foundation, dApps)          │    │
+│  └──────────┬─────────────────────────┘    │
+│             │                              │
+│  ┌──────────▼─────────────────────────┐    │
+│  │       key-storage module           │    │
+│  │  saveMnemonic / loadMnemonic /     │    │
+│  │  clearMnemonic / migrate           │    │
+│  └──────────┬─────────────────────────┘    │
+│             │                              │
+│  ┌──────────▼─────────────┐ ┌──────────┐  │
+│  │       IndexedDB        │ │ Web      │  │
+│  │  DB: omne_wallet       │ │ Crypto   │  │
+│  │  Store: keys           │ │ API      │  │
+│  │  ├── wrapping-key      │ │          │  │
+│  │  └── mnemonic          │ │ AES-GCM  │  │
+│  └────────────────────────┘ └──────────┘  │
+└────────────────────────────────────────────┘
+```
+
+## Design decisions
+
+### Why not `localStorage`?
+
+`localStorage` stores data as plain text, accessible to any JavaScript running on the same origin. An XSS vulnerability would expose mnemonic phrases directly.
+
+### Why IndexedDB + Web Crypto?
+
+- **IndexedDB** supports storing structured data including `CryptoKey` objects
+- **Web Crypto API** provides hardware-backed AES-GCM encryption with **non-extractable** keys
+- An XSS attacker can read IndexedDB but gets only ciphertext — the wrapping key is non-extractable, meaning `crypto.subtle.exportKey()` throws even if JavaScript accesses the key handle
+- This is not perfect security (a sufficiently advanced attack on the same origin could still call decrypt), but it's a significant barrier compared to plaintext localStorage
+
+### Threat model
+
+| Threat | Mitigation |
+|---|---|
+| XSS reads localStorage | ✅ Not used — migrated to IndexedDB |
+| XSS reads IndexedDB | ⚠️ Gets ciphertext only — wrapping key is non-extractable |
+| XSS calls decrypt via key handle | ⚠️ Possible if attacker controls JS on origin — CSP + input sanitisation are the outer defences |
+| Physical device access | ℹ️ Assumes device-level encryption (FileVault, BitLocker, dm-crypt) |
+| Server compromise | ✅ Keys never leave the client — no server-side storage |
+
+## API
+
+```typescript
+// Save a mnemonic (encrypts with AES-GCM, stores in IndexedDB)
+await saveMnemonic('abandon badge civil damage ...')
+
+// Load and decrypt the stored mnemonic
+const mnemonic = await loadMnemonic()
+// → "abandon badge civil damage ..." or null if not stored
+
+// Clear the stored mnemonic
+await clearMnemonic()
+
+// One-time migration from legacy localStorage
+const migrated = await migrateFromLocalStorage()
+// → mnemonic string if found in localStorage, null otherwise
+// Automatically saves to IndexedDB and removes from localStorage
+```
+
+## Implementation details
+
+### Wrapping key
+
+A 256-bit AES-GCM key is generated once via `crypto.subtle.generateKey()` and stored in IndexedDB as a `CryptoKey` object with `extractable: false`. This key wraps (encrypts) the mnemonic.
+
+```typescript
+const key = await crypto.subtle.generateKey(
+  { name: 'AES-GCM', length: 256 },
+  false,  // non-extractable
+  ['encrypt', 'decrypt'],
+)
+```
+
+### Encryption
+
+Each save generates a fresh 12-byte IV. The mnemonic is UTF-8 encoded and encrypted:
+
+```typescript
+const iv = crypto.getRandomValues(new Uint8Array(12))
+const ciphertext = await crypto.subtle.encrypt(
+  { name: 'AES-GCM', iv },
+  wrappingKey,
+  new TextEncoder().encode(mnemonic),
+)
+```
+
+Both `iv` and `ciphertext` are stored in IndexedDB as `Uint8Array`.
+
+### Migration from localStorage
+
+For existing applications that previously stored mnemonics in `localStorage`, the module provides a one-time migration:
+
+1. Check `localStorage` for the legacy key
+2. If found, save to IndexedDB (encrypted)
+3. Remove from `localStorage`
+4. Return the mnemonic for immediate use
+
+This runs once during application hydration.
+
+## Usage in wallet context
+
+```typescript
+// In your React wallet provider
+useEffect(() => {
+  async function hydrate() {
+    // One-time migration from legacy storage
+    const migrated = await migrateFromLocalStorage()
+    if (migrated) {
+      const wallet = restoreWallet(migrated)
+      setState({ wallet, address: wallet.address })
+      return
+    }
+
+    // Normal hydration from IndexedDB
+    const stored = await loadMnemonic()
+    if (stored) {
+      const wallet = restoreWallet(stored)
+      setState({ wallet, address: wallet.address })
+    }
+  }
+  hydrate()
+}, [])
+```
+
+## Consistency across products
+
+All OmneDAO-provided products (ARC wallet, foundation site, explorer, future frontends) use this identical pattern. This ensures:
+
+- Users can export a mnemonic from one product and import it in another
+- Security posture is uniform across the ecosystem
+- Migration from localStorage is handled consistently
+- Key storage code is auditable in one place

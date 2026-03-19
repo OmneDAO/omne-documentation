@@ -1,0 +1,244 @@
+# Utilities
+
+The SDK exports a comprehensive set of utility functions for address handling, balance formatting, gas estimation, and cryptographic verification.
+
+## Address utilities
+
+### `isValidOmneAddress(address)`
+
+Check if a string is a valid `omne1...` address.
+
+```typescript
+import { isValidOmneAddress } from '@omne/sdk'
+
+isValidOmneAddress('omne1a3f7c9b2d...')  // true
+isValidOmneAddress('0x123...')            // false
+isValidOmneAddress('')                    // false
+```
+
+### `isValidHexAddress(address)`
+
+Check if a string is a valid hex address (with or without `0x` prefix).
+
+```typescript
+import { isValidHexAddress } from '@omne/sdk'
+
+isValidHexAddress('0xa3f7c9b2d...')  // true
+```
+
+### `normalizeAddress(address)`
+
+Normalize an address to its canonical `omne1...` form.
+
+```typescript
+import { normalizeAddress } from '@omne/sdk'
+
+normalizeAddress('0xa3f7c9b2d...')  // "omne1a3f7c9b2d..."
+```
+
+### `toOmneAddress(hexAddress)` / `fromOmneAddress(omneAddress)`
+
+Convert between hex and Omne address formats.
+
+```typescript
+import { toOmneAddress, fromOmneAddress } from '@omne/sdk'
+
+toOmneAddress('a3f7c9b2d...')           // "omne1a3f7c9b2d..."
+fromOmneAddress('omne1a3f7c9b2d...')    // "a3f7c9b2d..."
+```
+
+### `parseAddress(address)`
+
+Parse any address format and return a structured result.
+
+```typescript
+import { parseAddress } from '@omne/sdk'
+
+const parsed = parseAddress('omne1a3f7c9b2d...')
+// { hex: "a3f7c9b2d...", omne: "omne1a3f7c9b2d...", valid: true }
+```
+
+---
+
+## Balance and denomination
+
+Omne uses 18-decimal precision. 1 OMC = 10¹⁸ Quar.
+
+### `toQuar(omcAmount)`
+
+Convert a human-readable OMC amount to its Quar representation.
+
+```typescript
+import { toQuar } from '@omne/sdk'
+
+toQuar('1')      // "1000000000000000000"
+toQuar('0.5')    // "500000000000000000"
+toQuar('1.23')   // "1230000000000000000"
+```
+
+### `fromQuar(quarAmount)`
+
+Convert from Quar to human-readable OMC.
+
+```typescript
+import { fromQuar } from '@omne/sdk'
+
+fromQuar('1000000000000000000')  // "1.0"
+fromQuar('500000000000000000')   // "0.5"
+```
+
+### `formatBalance(quarAmount)`
+
+Format a balance for display with appropriate decimal places.
+
+```typescript
+import { formatBalance } from '@omne/sdk'
+
+formatBalance('1234567890000000000')  // "1.234567890000000000 OMC"
+```
+
+---
+
+## Gas utilities
+
+### `calculateGasCost(gasUsed, gasPrice)`
+
+```typescript
+import { calculateGasCost } from '@omne/sdk'
+
+calculateGasCost(21000, '1000')  // cost in Quar
+```
+
+### `estimateGas(transaction)`
+
+Client-side gas estimation.
+
+```typescript
+import { estimateGas } from '@omne/sdk'
+
+const gas = estimateGas({
+  from: 'omne1...',
+  to: 'omne1...',
+  value: '1000000000000000000',
+})
+```
+
+---
+
+## Cryptographic utilities
+
+### `verifyEd25519Signature(message, signature, publicKey)`
+
+Verify an ed25519 signature.
+
+```typescript
+import { verifyEd25519Signature } from '@omne/sdk'
+
+const valid = verifyEd25519Signature(messageBytes, signatureBytes, pubkeyBytes)
+```
+
+### `verifyMessageSignature(message, signatureHex, publicKeyHex)`
+
+Verify a signed message (string-based API).
+
+```typescript
+import { verifyMessageSignature } from '@omne/sdk'
+
+const valid = verifyMessageSignature('Hello', signatureHex, pubkeyHex)
+```
+
+---
+
+## Hash utilities
+
+### `generateBlockHash()` / `generateTransactionHash()`
+
+Generate random hashes for testing.
+
+```typescript
+import { generateBlockHash, generateTransactionHash } from '@omne/sdk'
+
+generateBlockHash()        // random 64-char hex
+generateTransactionHash()  // random 64-char hex
+```
+
+### `isValidBlockHash(hash)` / `isValidTransactionHash(hash)`
+
+```typescript
+import { isValidBlockHash } from '@omne/sdk'
+
+isValidBlockHash('a1b2c3...')  // true if 64 hex chars
+```
+
+---
+
+## General utilities
+
+### `randomHex(bytes)`
+
+Generate random hex string of the given byte length.
+
+```typescript
+import { randomHex } from '@omne/sdk'
+randomHex(32)  // 64-char random hex string
+```
+
+### `retry(fn, options)`
+
+Retry an async function with exponential backoff.
+
+```typescript
+import { retry } from '@omne/sdk'
+
+const result = await retry(
+  () => client.getBalance('omne1...'),
+  { maxRetries: 3, baseDelay: 1000 }
+)
+```
+
+### `sleep(ms)`
+
+```typescript
+import { sleep } from '@omne/sdk'
+await sleep(1000) // wait 1 second
+```
+
+### `validateTransaction(tx)`
+
+Client-side transaction validation before submission.
+
+```typescript
+import { validateTransaction } from '@omne/sdk'
+validateTransaction(tx) // throws ValidationError if invalid
+```
+
+### `isBrowser()` / `isNode()`
+
+Environment detection.
+
+```typescript
+import { isBrowser, isNode } from '@omne/sdk'
+
+if (isBrowser()) {
+  // browser-specific code
+}
+```
+
+---
+
+## Secure client helpers
+
+For authenticated RPC endpoints with deployment guardrails:
+
+```typescript
+import {
+  generateDeploymentNonce,
+  buildDeploymentHeaders,
+  normaliseBearerToken,
+} from '@omne/sdk'
+
+const nonce = generateDeploymentNonce()
+const headers = buildDeploymentHeaders('my-api-token', nonce)
+const token = normaliseBearerToken('my-api-token')
+// → "Bearer my-api-token"
+```

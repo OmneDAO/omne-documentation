@@ -1,0 +1,217 @@
+# Wallet
+
+The wallet system provides BIP39 mnemonic generation with SLIP-0010 ed25519 hierarchical deterministic key derivation. All signing happens client-side — private keys never leave the device.
+
+## `Wallet`
+
+### Static methods
+
+#### `Wallet.generate()`
+
+Create a new wallet with a cryptographically random 12-word BIP39 mnemonic.
+
+```typescript
+const wallet = Wallet.generate()
+console.log(wallet.getMnemonic())
+// → "abandon badge civil damage enforce fabric ghost ..."
+```
+
+#### `Wallet.fromMnemonic(mnemonic, password?)`
+
+Restore a wallet from an existing mnemonic. Optional BIP39 passphrase for additional entropy.
+
+```typescript
+const wallet = Wallet.fromMnemonic('abandon badge civil ...')
+const wallet = Wallet.fromMnemonic('abandon badge civil ...', 'optional-passphrase')
+```
+
+#### `Wallet.fromPrivateKey(privateKey)`
+
+Create a standalone `WalletAccount` from a raw ed25519 private key (32 bytes, hex-encoded). No mnemonic, no HD derivation.
+
+```typescript
+const account = Wallet.fromPrivateKey('a1b2c3d4...')
+```
+
+Returns a `WalletAccount`, not a `Wallet`.
+
+### Instance methods
+
+#### `getMnemonic(): string`
+
+Returns the BIP39 mnemonic phrase.
+
+```typescript
+wallet.getMnemonic() // "abandon badge civil ..."
+```
+
+#### `getMnemonicWords(): string[]`
+
+Returns the mnemonic as an array of words.
+
+```typescript
+wallet.getMnemonicWords() // ["abandon", "badge", "civil", ...]
+```
+
+#### `getAccount(index?: number): WalletAccount`
+
+Derive an account at the given BIP-44 index. Default index is `0`.
+
+```typescript
+const primary = wallet.getAccount()     // index 0
+const second = wallet.getAccount(1)     // index 1
+```
+
+Derivation path: `m/44'/60'/0'/0/{index}` (all hardened, per SLIP-0010).
+
+#### `getAccounts(count, startIndex?): WalletAccount[]`
+
+Derive multiple accounts in a batch.
+
+```typescript
+const accounts = wallet.getAccounts(5)       // indices 0–4
+const accounts = wallet.getAccounts(3, 10)   // indices 10–12
+```
+
+#### `get address: string`
+
+Shorthand for the primary account's address (`getAccount(0).address`).
+
+```typescript
+wallet.address // "omne1a3f7c..."
+```
+
+#### `signTransaction(transaction, accountIndex?): SignedTransaction`
+
+Sign a transaction using the account at the given index.
+
+```typescript
+const signed = wallet.signTransaction(tx)       // signs with account 0
+const signed = wallet.signTransaction(tx, 2)    // signs with account 2
+```
+
+#### `exportWallet(password): Promise<ExportedWallet>`
+
+Export the wallet's mnemonic and all derived accounts as encrypted keystores.
+
+```typescript
+const exported = await wallet.exportWallet('strong-password')
+// { mnemonic: "...", accounts: [Keystore, ...] }
+```
+
+---
+
+## `WalletAccount`
+
+Represents a single keypair with signing capabilities.
+
+### Properties
+
+| Property | Type | Description |
+|---|---|---|
+| `address` | `string` | Omne address (`omne1...`) |
+| `publicKey` | `string` | ed25519 public key (64 hex chars) |
+| `privateKey` | `string` | ed25519 private key (64 hex chars) |
+| `path` | `string \| undefined` | BIP-44 derivation path (if HD-derived) |
+
+### Methods
+
+#### `signTransaction(transaction): SignedTransaction`
+
+Sign a transaction with this account's private key. Returns the transaction with an attached `signature` field.
+
+```typescript
+const signed = account.signTransaction({
+  from: account.address,
+  to: 'omne1recipient...',
+  value: '1000000000000000000',
+  gasLimit: 21000,
+  gasPrice: '1000',
+  nonce: 0,
+})
+
+console.log(signed.signature) // ed25519 signature, hex-encoded
+```
+
+**Signing process:**
+1. Canonical transaction message is constructed (little-endian numeric encoding)
+2. SHA-256 hash of the message
+3. ed25519 signature over the hash
+4. Signature (64 bytes) concatenated with public key (32 bytes)
+
+#### `signMessage(message): string`
+
+Sign an arbitrary string message. Returns the signature + public key concatenated (hex-encoded).
+
+```typescript
+const sig = account.signMessage('Hello, Omne!')
+```
+
+#### `toKeystore(password): Promise<Keystore>`
+
+Export this account to an encrypted JSON keystore (PBKDF2 + AES-256-GCM).
+
+```typescript
+const ks = await account.toKeystore('my-password')
+```
+
+#### `WalletAccount.fromKeystore(keystore, password): Promise<WalletAccount>`
+
+Restore an account from an encrypted keystore.
+
+```typescript
+const restored = await WalletAccount.fromKeystore(ks, 'my-password')
+```
+
+#### `WalletAccount.fromPrivateKey(privateKey): WalletAccount`
+
+Create an account from a raw private key.
+
+```typescript
+const account = WalletAccount.fromPrivateKey('a1b2c3...')
+```
+
+---
+
+## `WalletManager`
+
+Manages multiple wallets and standalone accounts.
+
+```typescript
+import { WalletManager } from '@omne/sdk'
+
+const manager = new WalletManager()
+
+// Create wallets
+const w1 = manager.createWallet('main')
+const w2 = manager.importWallet('abandon badge ...', 'backup')
+
+// Import a standalone account
+manager.importAccount('a1b2c3...', 'hot-key')
+
+// List
+manager.listWallets()   // ['main', 'backup']
+manager.listAccounts()  // ['hot-key']
+
+// Retrieve
+const wallet = manager.getWallet('main')
+const account = manager.getAccount('hot-key')
+
+// Clean up
+manager.removeWallet('backup')
+manager.clear() // Remove everything
+```
+
+---
+
+## Cryptographic details
+
+| Parameter | Value |
+|---|---|
+| Mnemonic | BIP39, 12/15/18/21/24 words |
+| HD derivation | SLIP-0010 ed25519, all hardened |
+| Signing algorithm | ed25519 (no key recovery) |
+| Address derivation | `SHA256("OMNE_ADDRESS_V1" \|\| pubkey)[0..20]` |
+| Address encoding | `omne1{hex}` |
+| Keystore encryption | PBKDF2 + AES-256-GCM, JSON v3 |
+| Transaction hash | SHA-256 over canonical message format |

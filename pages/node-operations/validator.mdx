@@ -1,0 +1,94 @@
+# Validator Node
+
+A validator participates in PoVERA consensus — producing commerce blocks at 3-second cadence and security blocks at 9-minute cadence.
+
+## Start the genesis validator
+
+The genesis validator is the first node on the network. It creates block 0 and begins block production:
+
+```bash
+omne-node validator start \
+  --data-dir ~/.omne/data \
+  --network devnet \
+  --bind 0.0.0.0:9944 \
+  --p2p-port 30303 \
+  --validator-stake 22 \
+  --storage rocksdb
+```
+
+### Flag reference
+
+| Flag | Purpose |
+|---|---|
+| `--data-dir` | Where RocksDB state, blocks, and receipts are stored |
+| `--network` | Network profile (`devnet`, `testum`, `principalis`) |
+| `--bind` | RPC listen address (JSON-RPC 2.0) |
+| `--p2p-port` | libp2p listen port for peer communication |
+| `--validator-stake` | OGT stake amount (devnet: 15–28 range) |
+| `--storage` | `rocksdb` for persistence, `memory` for ephemeral test |
+
+### Log verbosity
+
+```bash
+RUST_LOG=info omne-node validator start ...
+```
+
+Available levels: `error`, `warn`, `info`, `debug`, `trace`.
+
+## Start additional validators
+
+Additional validators join the network by bootstrapping from an existing node:
+
+```bash
+omne-node validator start \
+  --data-dir ~/.omne/data-v2 \
+  --network devnet \
+  --bind 0.0.0.0:9946 \
+  --p2p-port 30305 \
+  --validator-stake 22 \
+  --storage rocksdb \
+  --bootstrap-peers "/ip4/<GENESIS_IP>/tcp/30303/p2p/<GENESIS_PEER_ID>"
+```
+
+After the node syncs, register the validator on-chain:
+
+```bash
+omne-node validator register \
+  --rpc-endpoint http://127.0.0.1:9946 \
+  --operator-address <YOUR_OPERATOR_ADDRESS> \
+  --stake-ogt 22 \
+  --commission-bps 500
+```
+
+## Verify validator status
+
+```bash
+# Node status
+omne-node status --rpc-endpoint http://127.0.0.1:9944
+
+# Validator-specific telemetry
+omne-node validator status --rpc-endpoint http://127.0.0.1:9944
+
+# Reward forecast
+omne-node validator rewards \
+  --rpc-endpoint http://127.0.0.1:9944 \
+  --lookahead 10
+```
+
+## Stake planning
+
+Project validator economics over time:
+
+```bash
+omne-node validator stake \
+  --network devnet \
+  --amount 20 \
+  --horizon-days 45 \
+  --label pilot-phase
+```
+
+Output includes:
+- Allowed stake range (with manifest overrides)
+- Estimated network issuance per day
+- Per-validator share
+- Estimated breakeven in days

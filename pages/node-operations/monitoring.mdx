@@ -1,0 +1,68 @@
+# Monitoring
+
+## Prometheus metrics
+
+Every `omne-node` instance exposes a `/metrics` endpoint on the RPC port in Prometheus exposition format.
+
+```bash
+curl http://127.0.0.1:9944/metrics
+```
+
+### Prometheus configuration
+
+```yaml
+scrape_configs:
+  - job_name: "omne-validators"
+    metrics_path: /metrics
+    scrape_interval: 15s
+    static_configs:
+      - targets:
+          - <NODE_IP>:9944
+```
+
+A reference configuration ships at `omne-blockchain/docker/devnet/prometheus.yml`.
+
+### Key metrics
+
+| Metric | Description |
+|---|---|
+| `omne_block_height` | Current block height |
+| `omne_peers_connected` | Number of connected P2P peers |
+| `omne_transactions_processed` | Total transactions processed |
+| `omne_fee_intake_quar` | Total fees collected (Quar) |
+| `omne_reward_payout_quar` | Total validator rewards distributed |
+| `omne_mempool_size` | Pending transactions in mempool |
+| `omne_rpc_requests_total` | RPC requests by method |
+| `omne_rpc_rate_limited_total` | Rate-limited RPC requests |
+
+## Health check
+
+```bash
+curl -f http://127.0.0.1:9944/health
+# Returns "healthy" with HTTP 200 when the node is ready
+```
+
+## Validator-specific telemetry
+
+```bash
+# Validator status
+omne-node validator status --rpc-endpoint http://127.0.0.1:9944
+
+# Recent execution records
+omne-node telemetry --rpc-endpoint http://127.0.0.1:9944 --limit 10
+
+# Reward forecast
+omne-node validator rewards \
+  --rpc-endpoint http://127.0.0.1:9944 \
+  --lookahead 10
+```
+
+## Alerting recommendations
+
+| Alert | Condition | Severity |
+|---|---|---|
+| Node down | Health check fails for 2+ minutes | Critical |
+| Block production stalled | `omne_block_height` unchanged for 30+ seconds | Critical |
+| Peer count low | `omne_peers_connected` < 2 | Warning |
+| Mempool backlog | `omne_mempool_size` > 10000 | Warning |
+| Rate limiting active | `omne_rpc_rate_limited_total` increasing | Info |

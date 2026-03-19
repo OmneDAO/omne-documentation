@@ -1,0 +1,51 @@
+# Omne Developer Documentation
+
+Welcome to the Omne developer documentation — the complete reference for building on, operating, and integrating with the Omne L1 blockchain.
+
+## What is Omne?
+
+Omne is a production-grade Layer 1 blockchain built for **microscopic fees**, **deterministic execution**, and **dual-layer consensus**. It is purpose-built for commerce-grade throughput with institutional security guarantees.
+
+### Core Design Principles
+
+- **Microscopic fees** — transaction costs measured in fractions of a cent. Fee revenue is not a goal; accessibility is.
+- **Dual-layer consensus (PoVERA)** — 3-second commerce finality for everyday transactions, 9-minute security finality for cross-chain guarantees and validator attestation.
+- **Deterministic execution** — identical results across OS, CPU, and runtime. No nondeterminism in block production.
+- **Non-fee anti-spam** — rate limiting, stake-weighted QoS, throttling, and circuit breakers protect the network without inflating costs.
+
+## Documentation Sections
+
+### [Getting Started →](/getting-started)
+Install the SDK, create a wallet, and submit your first transaction in under 5 minutes.
+
+### [SDK Reference →](/sdk)
+Complete TypeScript/JavaScript SDK API — Wallet, OmneClient, contracts, tokens, and utilities.
+
+### [Node Operations →](/node-operations)
+Build from source, generate keys, initialise genesis, and run validators, archive nodes, and full nodes.
+
+### [Architecture →](/architecture)
+PoVERA consensus, dual-layer cadence, fee model, reward/slash economics, and key storage design.
+
+### [API Reference →](/api-reference)
+Complete JSON-RPC method reference — every endpoint, parameter, and response format.
+
+## Quick Links
+
+| Resource | Link |
+|---|---|
+| SDK on npm | [`@omne/sdk`](https://www.npmjs.com/package/@omne/sdk) |
+| Foundation | [omne.foundation](https://omne.foundation) |
+| GitHub | [github.com/omnelabs](https://github.com/omnelabs) |
+| Whitepaper | [omne.foundation/whitepaper](https://omne.foundation/whitepaper) |
+
+## SDK Version
+
+The current stable SDK release is **@omne/sdk@0.3.0**, supporting:
+
+- BIP39 HD wallets with SLIP-0010 ed25519 derivation
+- Full JSON-RPC client (HTTP and WebSocket)
+- ORC-20 token deployment and management
+- Computational job submission (OON)
+- Real-time event subscriptions
+- Browser and Node.js environments

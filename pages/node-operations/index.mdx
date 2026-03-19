@@ -1,0 +1,90 @@
+# Node Operations
+
+> **Philosophy:** Every step you run in dev should mirror what you'd run in
+> production. No wrappers, no `make` shortcuts, no magic scripts. If you
+> can't explain each command you're typing, you don't understand the system
+> well enough to operate it.
+
+## Node types
+
+Omne runs on a single binary — `omne-node` — configured via CLI flags to operate in different modes:
+
+| Mode | Command | Consensus | Receipt retention |
+|---|---|---|---|
+| **Validator** | `omne-node validator start --validator-stake N` | ✅ Produces blocks | Pruned by default |
+| **Full node** | `omne-node start` | ❌ Syncs only | Pruned by default |
+| **Archive node** | `omne-node start --receipt-archive true` | ❌ Syncs only | Full history |
+
+All three modes use the same binary, same configuration format, and same RPC interface.
+
+## Prerequisites
+
+| Requirement | Version / Notes |
+|---|---|
+| Rust toolchain | `nightly-2026-02-10` (pinned to avoid compiler issues) |
+| System deps | `pkg-config`, `libssl-dev`, `clang`, `cmake` |
+| Docker (optional) | 24.x+ with Compose V2 for containerised deployments |
+| Disk | ≥10 GB for RocksDB state per node; archive nodes scale with chain history |
+
+Install the pinned Rust toolchain:
+
+```bash
+rustup toolchain install nightly-2026-02-10
+rustup default nightly-2026-02-10
+```
+
+## Workflow overview
+
+import { Steps } from 'nextra/components'
+
+<Steps>
+### Build the binary
+
+Compile `omne-node` from source. See [Building from Source](/node-operations/building).
+
+### Generate validator keys
+
+Create controller and consensus keypairs. See [Validator Keys](/node-operations/keys).
+
+### Initialize genesis
+
+Create the genesis manifest and data directory. See [Genesis Initialization](/node-operations/genesis).
+
+### Start a node
+
+Run as a [Validator](/node-operations/validator), [Full Node](/node-operations/full-node), or [Archive Node](/node-operations/archive-node).
+
+### Monitor
+
+Set up Prometheus scraping and health checks. See [Monitoring](/node-operations/monitoring).
+</Steps>
+
+## Graceful shutdown
+
+Send `SIGTERM` (or `SIGINT` / Ctrl-C) to the `omne-node` process:
+
+```bash
+# If running in foreground: Ctrl-C
+
+# If running as a background process:
+kill -TERM <PID>
+```
+
+The node flushes RocksDB WAL to disk and closes P2P connections before exiting. Never use `kill -9` unless the node is unresponsive — it can corrupt the WAL and require recovery.
+
+## Full cleanup
+
+Remove all state for a fresh start:
+
+```bash
+# Remove a single node's data
+rm -rf ~/.omne/data
+
+# Remove all node data
+rm -rf ~/.omne
+
+# Clean build artefacts
+cd omne-blockchain && cargo clean
+```
+
+For Docker cleanup, see [Docker Workflow](/node-operations/docker).

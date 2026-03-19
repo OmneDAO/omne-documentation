@@ -1,0 +1,72 @@
+# API Reference
+
+Omne nodes expose a **JSON-RPC 2.0** API over HTTP and WebSocket transports. This is the same API surface the SDK communicates with internally.
+
+## Endpoint
+
+By default, `omne-node` listens on the address specified by `--bind`:
+
+```
+http://<bind-address>:<port>
+ws://<bind-address>:<port>
+```
+
+Example: `http://127.0.0.1:9944`
+
+## Transport
+
+### HTTP
+
+Standard JSON-RPC over HTTP POST:
+
+```bash
+curl -X POST http://127.0.0.1:9944 \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","method":"omne_blockNumber","params":[],"id":1}'
+```
+
+### WebSocket
+
+Persistent connection for subscriptions and real-time events:
+
+```typescript
+const client = new OmneClient('ws://127.0.0.1:9944')
+await client.connect()
+```
+
+## Authentication
+
+When deployment guardrails are enabled, requests require:
+
+- `Authorization: Bearer <token>` header
+- `X-Omne-Nonce` header (unique per request, prevents replay)
+
+The SDK and CLI handle this automatically when `OMNE_RPC_TOKEN` is set.
+
+```bash
+export OMNE_RPC_TOKEN="your-api-token"
+```
+
+## Rate limiting
+
+Endpoints support per-key rate limiting. When exceeded, responses include:
+
+| Header | Description |
+|---|---|
+| `X-RateLimit-Limit` | Maximum requests per window |
+| `X-RateLimit-Remaining` | Remaining requests in current window |
+| `X-RateLimit-Reset` | Window reset timestamp |
+| `X-Omne-Burst-Remaining` | Burst capacity remaining |
+
+Rate-limited requests return HTTP `429`.
+
+## Non-RPC endpoints
+
+| Path | Method | Description |
+|---|---|---|
+| `/health` | GET | Returns `"healthy"` with HTTP 200 when the node is ready |
+| `/metrics` | GET | Prometheus exposition format metrics |
+
+## Method reference
+
+See [JSON-RPC Methods](/api-reference/json-rpc) for the complete method listing.

@@ -1,0 +1,385 @@
+# JSON-RPC Methods
+
+Complete listing of all JSON-RPC methods exposed by `omne-node`.
+
+## Network & information
+
+### `omne_chainId`
+
+Returns the chain ID of the connected network.
+
+```json
+// Request
+{"jsonrpc":"2.0","method":"omne_chainId","params":[],"id":1}
+
+// Response
+{"jsonrpc":"2.0","result":"0","id":1}
+```
+
+| Network | Chain ID |
+|---|---|
+| primum (devnet) | 0 |
+| testum | 1 |
+| principalis | 42 |
+
+### `omne_networkInfo`
+
+Returns network configuration and status.
+
+```json
+// Request
+{"jsonrpc":"2.0","method":"omne_networkInfo","params":[],"id":1}
+
+// Response
+{
+  "jsonrpc":"2.0",
+  "result": {
+    "chainId": 0,
+    "networkName": "primum",
+    "protocolVersion": "1.0.0"
+  },
+  "id":1
+}
+```
+
+### `omne_getServiceRegistry`
+
+Returns the service registry snapshot.
+
+```json
+{"jsonrpc":"2.0","method":"omne_getServiceRegistry","params":[],"id":1}
+```
+
+---
+
+## Accounts & balances
+
+### `omne_getBalance`
+
+Returns the OMC balance for an address.
+
+**Parameters:**
+1. `address` (string) — `omne1...` format
+
+```json
+// Request
+{"jsonrpc":"2.0","method":"omne_getBalance","params":["omne1a3f7c9b2d..."],"id":1}
+
+// Response
+{
+  "jsonrpc":"2.0",
+  "result": {
+    "address": "omne1a3f7c9b2d...",
+    "balance": "1000000000000000000",
+    "balanceOMC": "1.000000000000000000"
+  },
+  "id":1
+}
+```
+
+### `omne_getAccount`
+
+Returns full account information including balance and nonce.
+
+**Parameters:**
+1. `address` (string)
+
+```json
+{"jsonrpc":"2.0","method":"omne_getAccount","params":["omne1..."],"id":1}
+```
+
+### `omne_getNonce`
+
+Returns the current transaction nonce for an address.
+
+**Parameters:**
+1. `address` (string)
+
+```json
+// Request
+{"jsonrpc":"2.0","method":"omne_getNonce","params":["omne1..."],"id":1}
+
+// Response
+{"jsonrpc":"2.0","result":5,"id":1}
+```
+
+---
+
+## Transactions
+
+### `omne_sendTransaction`
+
+Submit a transaction for inclusion in the mempool.
+
+**Parameters:**
+1. `transaction` (object) — Transaction fields
+
+```json
+{
+  "jsonrpc":"2.0",
+  "method":"omne_sendTransaction",
+  "params":[{
+    "from": "omne1sender...",
+    "to": "omne1recipient...",
+    "value": "1000000000000000000",
+    "gasLimit": 21000,
+    "gasPrice": "1000",
+    "nonce": 0
+  }],
+  "id":1
+}
+```
+
+### `omne_sendRawTransaction`
+
+Submit a pre-signed transaction. This is the primary method used by the SDK — the client signs locally and submits the signed payload.
+
+**Parameters:**
+1. `signedTransaction` (object) — Transaction with `signature` field
+
+```json
+{
+  "jsonrpc":"2.0",
+  "method":"omne_sendRawTransaction",
+  "params":[{
+    "from": "omne1sender...",
+    "to": "omne1recipient...",
+    "value": "1000000000000000000",
+    "gasLimit": 21000,
+    "gasPrice": "1000",
+    "nonce": 0,
+    "signature": "a1b2c3..."
+  }],
+  "id":1
+}
+```
+
+### `omne_getTransactionReceipt`
+
+Returns the receipt for a mined transaction.
+
+**Parameters:**
+1. `transactionId` (string) — `txn_...` format
+
+```json
+// Request
+{"jsonrpc":"2.0","method":"omne_getTransactionReceipt","params":["txn_7b3c4d..."],"id":1}
+
+// Response
+{
+  "jsonrpc":"2.0",
+  "result": {
+    "transactionId": "txn_7b3c4d...",
+    "blockHeight": 42,
+    "status": "success",
+    "gasUsed": 21000,
+    "from": "omne1sender...",
+    "to": "omne1recipient..."
+  },
+  "id":1
+}
+```
+
+Returns `null` if the transaction has not been mined.
+
+### `omne_estimateGas`
+
+Estimate gas consumption for a transaction.
+
+**Parameters:**
+1. `transaction` (object) — Partial transaction
+
+```json
+// Request
+{"jsonrpc":"2.0","method":"omne_estimateGas","params":[{"from":"omne1...","to":"omne1...","value":"1000000000000000000"}],"id":1}
+
+// Response
+{"jsonrpc":"2.0","result":21000,"id":1}
+```
+
+### `omne_call`
+
+Execute a read-only call against the current state (no transaction created).
+
+**Parameters:**
+1. `callParams` (object)
+
+```json
+{"jsonrpc":"2.0","method":"omne_call","params":[{"to":"contract_...","data":"..."}],"id":1}
+```
+
+---
+
+## Contracts
+
+### `omne_deployContract`
+
+Deploy a contract from an execution plan.
+
+**Parameters:**
+1. `executionPlan` (object) — Bytecode, constructor args, gas params
+
+```json
+{
+  "jsonrpc":"2.0",
+  "method":"omne_deployContract",
+  "params":[{
+    "bytecode": "0x...",
+    "from": "omne1deployer...",
+    "gasLimit": 500000,
+    "gasPrice": "1000"
+  }],
+  "id":1
+}
+```
+
+**Response:**
+```json
+{
+  "result": {
+    "contractAddress": "contract_5e8f1a...",
+    "transactionId": "txn_...",
+    "blockHeight": 100
+  }
+}
+```
+
+### `omne_contractCall`
+
+Call a contract method (state-mutating or read-only).
+
+**Parameters:**
+1. `callParams` (object)
+
+```json
+{
+  "jsonrpc":"2.0",
+  "method":"omne_contractCall",
+  "params":[{
+    "contractAddress": "contract_...",
+    "method": "balanceOf",
+    "args": ["omne1holder..."],
+    "from": "omne1caller..."
+  }],
+  "id":1
+}
+```
+
+### `omne_verifyExecutionPlanSignature`
+
+Verify the compiler attachment signature for a deployment plan.
+
+---
+
+## Gas & pricing
+
+### `omne_gasPrice`
+
+Returns the current gas price in Quar.
+
+```json
+// Response
+{"jsonrpc":"2.0","result":"1000","id":1}
+```
+
+### `omne_maxPriorityFeePerGas`
+
+Returns the maximum priority fee per gas unit.
+
+---
+
+## Blocks
+
+### `omne_blockNumber`
+
+Returns the current block height.
+
+```json
+// Response
+{"jsonrpc":"2.0","result":1234,"id":1}
+```
+
+### `omne_getBlockByNumber`
+
+**Parameters:**
+1. `blockNumber` (number | "latest")
+
+```json
+{"jsonrpc":"2.0","method":"omne_getBlockByNumber","params":[42],"id":1}
+```
+
+### `omne_getBlockByHash`
+
+**Parameters:**
+1. `blockHash` (string)
+
+```json
+{"jsonrpc":"2.0","method":"omne_getBlockByHash","params":["0xa1b2c3..."],"id":1}
+```
+
+---
+
+## ORC-20 tokens
+
+### `omne_deployORC20`
+
+Deploy a new ORC-20 fungible token.
+
+**Parameters:**
+1. `tokenParams` (object) — name, symbol, totalSupply, decimals, config
+
+### `omne_getTokenInfo`
+
+**Parameters:**
+1. `tokenAddress` (string) — `contract_...` format
+
+### `omne_getTokenBalance`
+
+**Parameters:**
+1. `tokenAddress` (string)
+2. `holderAddress` (string) — `omne1...` format
+
+### `omne_tokenTransfer`
+
+Transfer ORC-20 tokens between accounts.
+
+### `omne_searchTokens`
+
+Search deployed tokens by name or symbol.
+
+---
+
+## Computational jobs (OON)
+
+### `omne_submitJob`
+
+Submit a computational job to the Omne Orchestration Network.
+
+### `omne_getJobStatus`
+
+Query the status of a submitted job.
+
+**Parameters:**
+1. `jobId` (string)
+
+### `omne_registerNode`
+
+Register a compute node with the OON.
+
+### `omne_getNodeInfo`
+
+Query information about a registered compute node.
+
+---
+
+## Identifier conventions
+
+All identifiers in requests and responses use canonical prefixes:
+
+| Type | Format | Example |
+|---|---|---|
+| Wallet address | `omne1{40 hex}` | `omne1a3f7c9b2d...` |
+| Contract address | `contract_{40 hex}` | `contract_5e8f1a...` |
+| Transaction ID | `txn_{64 hex}` | `txn_7b3c4d...` |
+
+The RPC layer enforces these formats. Bare hex and `0x`-prefixed addresses are accepted for backwards compatibility but responses always use the canonical form.

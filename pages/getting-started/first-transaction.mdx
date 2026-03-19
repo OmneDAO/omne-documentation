@@ -1,0 +1,156 @@
+# First Transaction
+
+This guide walks through submitting a signed OMC transfer to the Omne blockchain.
+
+## Prerequisites
+
+- SDK installed (`@omne/sdk`)
+- A wallet with a funded account (use the faucet on devnet)
+- Access to an RPC endpoint
+
+## Connect to the network
+
+```typescript
+import { Wallet, OmneClient } from '@omne/sdk'
+
+// Connect to a local devnet node
+const client = new OmneClient('http://localhost:9944')
+
+// Or use a named network
+import { createClient } from '@omne/sdk'
+const client = createClient('primum')
+```
+
+## Check your balance
+
+```typescript
+const wallet = Wallet.fromMnemonic('your twelve word mnemonic ...')
+const account = wallet.getAccount(0)
+
+const balance = await client.getBalance(account.address)
+console.log(`Balance: ${balance.balanceOMC} OMC`)
+// → "Balance: 100.000000000000000000 OMC"
+```
+
+import { Callout } from 'nextra/components'
+
+<Callout>
+  **Quar precision:** 1 OMC = 10¹⁸ Quar. The SDK handles conversion automatically — use `balanceOMC` for display and `balanceQuar` for arithmetic.
+</Callout>
+
+## Send a transfer
+
+The `transfer` method constructs, signs, and submits a transaction in one call:
+
+```typescript
+const receipt = await client.transfer({
+  from: account.address,
+  to: 'omne1recipient...',
+  valueOMC: '1.5',         // 1.5 OMC
+  gasLimit: 21000,          // default for simple transfer
+  gasPriceQuar: '1000',    // microscopic fee
+})
+
+console.log('Transaction ID:', receipt.transactionId)
+console.log('Block:', receipt.blockHeight)
+console.log('Status:', receipt.status)
+```
+
+## Manual transaction construction
+
+For more control, construct and sign the transaction yourself:
+
+```typescript
+// Get the current nonce
+const nonce = await client.getTransactionCount(account.address)
+
+// Estimate gas
+const gasEstimate = await client.estimateGas({
+  from: account.address,
+  to: 'omne1recipient...',
+  value: '1500000000000000000', // 1.5 OMC in Quar
+})
+
+// Build and sign
+import { toQuar } from '@omne/sdk'
+
+const tx = {
+  from: account.address,
+  to: 'omne1recipient...',
+  value: toQuar('1.5'),     // Convert OMC → Quar string
+  gasLimit: gasEstimate,
+  gasPrice: '1000',
+  nonce,
+}
+
+const signed = account.signTransaction(tx)
+
+// Submit the signed transaction
+const receipt = await client.sendTransaction(signed)
+```
+
+## Wait for confirmation
+
+```typescript
+const receipt = await client.waitForTransaction(txHash, 30000)
+// Waits up to 30 seconds for block inclusion
+
+if (receipt.status === 'success') {
+  console.log('Confirmed in block', receipt.blockHeight)
+}
+```
+
+## Fee estimation
+
+```typescript
+const fees = await client.estimateFees({
+  from: account.address,
+  to: 'omne1recipient...',
+  value: toQuar('10'),
+})
+
+console.log('Estimated fee:', fees)
+```
+
+Omne's fee model targets **microscopic costs** — a typical transfer costs roughly `0.000001 OMC`.
+
+## Transaction priority
+
+Omne's dual-layer consensus processes transactions at different cadences:
+
+| Priority | Layer | Finality |
+|---|---|---|
+| `commerce` | Commerce | ~3 seconds |
+| `standard` | Commerce | ~3 seconds |
+| `security` | Security | ~9 minutes |
+
+```typescript
+await client.transfer({
+  from: account.address,
+  to: 'omne1recipient...',
+  valueOMC: '1.0',
+  priority: 'commerce', // Fast finality
+})
+```
+
+## Error handling
+
+```typescript
+import { TransactionError, NetworkError } from '@omne/sdk'
+
+try {
+  const receipt = await client.transfer({ ... })
+} catch (error) {
+  if (error instanceof TransactionError) {
+    console.error('Transaction failed:', error.message)
+  } else if (error instanceof NetworkError) {
+    console.error('Network unreachable:', error.message)
+  }
+}
+```
+
+## What's next?
+
+- Deploy an [ORC-20 token](/sdk/client#orc-20-tokens)
+- Run your own [node](/node-operations)
+- Explore the full [JSON-RPC API](/api-reference/json-rpc)

@@ -1,0 +1,77 @@
+# Building from Source
+
+## Clone and build
+
+```bash
+git clone https://github.com/omnelabs/omne-blockchain.git
+cd omne-blockchain
+cargo build --release
+```
+
+The binary lands at `target/release/omne-node`. Optionally copy it to your `PATH`:
+
+```bash
+cp target/release/omne-node ~/.local/bin/
+```
+
+## Verify the build
+
+```bash
+omne-node --version
+```
+
+## System dependencies
+
+### macOS
+
+```bash
+brew install pkg-config openssl cmake
+```
+
+### Ubuntu / Debian
+
+```bash
+sudo apt-get update
+sudo apt-get install -y pkg-config libssl-dev clang cmake build-essential
+```
+
+### Fedora / RHEL
+
+```bash
+sudo dnf install pkg-config openssl-devel clang cmake gcc
+```
+
+## Rust toolchain
+
+The project pins `nightly-2026-02-10` to avoid internal compiler errors with newer nightlies:
+
+```bash
+rustup toolchain install nightly-2026-02-10
+rustup default nightly-2026-02-10
+```
+
+## Build flags
+
+| Flag | Effect |
+|---|---|
+| `--release` | Optimised build (required for production) |
+| `--bin omne-node` | Build only the node binary (faster than building all targets) |
+
+For development iteration:
+
+```bash
+cargo build --bin omne-node
+# Debug build — faster to compile, slower to run
+```
+
+## Running tests
+
+```bash
+cargo test -p omne-blockchain
+```
+
+This runs the full test suite (~500+ tests). For a focused subset:
+
+```bash
+cargo test -p omne-blockchain -- --test-threads=1 test_name_pattern
+```

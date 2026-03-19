@@ -1,0 +1,60 @@
+# Architecture
+
+Omne is a Layer 1 blockchain designed for **production-grade commerce** with **institutional security guarantees**. This section covers the foundational design decisions.
+
+## Design principles
+
+| Principle | Implementation |
+|---|---|
+| Microscopic fees | Fee revenue is not a goal. Costs are fractions of a cent. Anti-spam uses non-fee controls. |
+| Dual-layer consensus | 3-second commerce finality for speed. 9-minute security finality for cross-chain guarantees. |
+| Deterministic execution | Identical results across OS, CPU, and runtime. No nondeterminism in block production. |
+| Client-side signing | Private keys never leave the user's device. Nodes verify signatures but never hold user keys. |
+
+## Core components
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    Applications                          │
+│        (ARC Wallet, Explorer, dApps, OON)               │
+├─────────────────────────────────────────────────────────┤
+│                   @omne/sdk                              │
+│    Wallet · OmneClient · Contracts · Tokens              │
+├─────────────────────────────────────────────────────────┤
+│                JSON-RPC 2.0 API                          │
+│           (HTTP + WebSocket transport)                   │
+├─────────────────────────────────────────────────────────┤
+│                   omne-node                              │
+│   ┌──────────┐ ┌──────────┐ ┌──────────────────────┐   │
+│   │ Mempool  │ │   P2P    │ │   PoVERA Consensus   │   │
+│   │          │ │ (libp2p) │ │ Commerce │ Security   │   │
+│   └──────────┘ └──────────┘ └──────────────────────┘   │
+│   ┌──────────────────────────────────────────────────┐  │
+│   │              State (RocksDB)                     │  │
+│   │  Accounts · Contracts · Receipts · Rewards       │  │
+│   └──────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────┘
+```
+
+## Key decisions
+
+### Single binary, multiple modes
+
+All node types — validator, full node, archive node — run from the same `omne-node` binary configured via CLI flags. This eliminates version drift between node types and simplifies deployment.
+
+### Client-side only signing
+
+User private keys are managed entirely on client devices (browsers, mobile apps, CLI). The SDK's `Wallet` class handles key generation, derivation, and transaction signing. Signed transactions are submitted to nodes via `omne_sendRawTransaction`. Nodes verify signatures but never have access to user private keys.
+
+Validator consensus keys are a separate concern — managed by the node's encrypted key archive system.
+
+### Non-fee anti-spam
+
+Rather than inflating fees to discourage spam, Omne uses:
+- Per-peer rate limiting
+- Per-account transaction throttling
+- Stake-weighted QoS for validators
+- Circuit breakers for overload conditions
+- Priority-based message shedding (consensus messages survive overload)
+
+See [Fee Model & Economics](/architecture/economics) for details.

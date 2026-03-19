@@ -1,0 +1,106 @@
+# Create a Wallet
+
+The Omne SDK uses **BIP39 mnemonics** with **SLIP-0010 ed25519 HD derivation**. Every wallet starts with a 12-word mnemonic phrase that deterministically generates an unlimited number of accounts.
+
+## Generate a new wallet
+
+```typescript
+import { Wallet } from '@omne/sdk'
+
+// Generate a wallet with a fresh random mnemonic
+const wallet = Wallet.generate()
+
+// The mnemonic is your master secret — back it up securely
+console.log('Mnemonic:', wallet.getMnemonic())
+// → "abandon badge civil damage enforce fabric ghost ..."
+
+// Derive the primary account (index 0)
+const account = wallet.getAccount(0)
+
+console.log('Address:', account.address)
+// → "omne1a3f7c..."
+
+console.log('Public Key:', account.publicKey)
+// → "d4e5f6..." (64 hex chars, 32 bytes)
+```
+
+import { Callout } from 'nextra/components'
+
+<Callout type="warning">
+  **Never share your mnemonic or private key.** Anyone with access to your mnemonic controls all accounts derived from it. Store it offline in a secure location.
+</Callout>
+
+## Restore from mnemonic
+
+```typescript
+const restored = Wallet.fromMnemonic('abandon badge civil damage ...')
+const account = restored.getAccount(0) // Same address as before
+```
+
+## Derive multiple accounts
+
+Each account has a unique keypair derived from the same mnemonic at different BIP-44 indices:
+
+```typescript
+const accounts = wallet.getAccounts(5) // Accounts 0–4
+
+accounts.forEach((acct, i) => {
+  console.log(`Account ${i}: ${acct.address}`)
+})
+```
+
+Derivation path: `m/44'/60'/0'/0/{index}` (all hardened, per SLIP-0010).
+
+## Import a private key
+
+If you already have a raw ed25519 private key (32 bytes, hex-encoded):
+
+```typescript
+import { Wallet } from '@omne/sdk'
+
+const account = Wallet.fromPrivateKey('a1b2c3d4...')
+console.log('Address:', account.address)
+```
+
+This creates a standalone `WalletAccount` — no mnemonic, no HD derivation.
+
+## Address format
+
+Omne addresses follow a deterministic derivation:
+
+1. Compute the ed25519 public key from the private key
+2. Hash with SHA-256 using domain separation: `SHA256("OMNE_ADDRESS_V1" || pubkey)`
+3. Take the first 20 bytes
+4. Encode as `omne1{hex}`
+
+```typescript
+import { isValidOmneAddress } from '@omne/sdk'
+
+isValidOmneAddress('omne1a3f7c9b2d...')  // true
+isValidOmneAddress('0x123...')            // false
+```
+
+## Sign a message
+
+```typescript
+const account = wallet.getAccount(0)
+const signature = account.signMessage('Hello, Omne!')
+// Returns ed25519 signature (64 bytes) + public key (32 bytes), hex-encoded
+```
+
+## Encrypted keystore export
+
+Export an account to an encrypted JSON keystore (PBKDF2 + AES-256-GCM):
+
+```typescript
+const keystore = await account.toKeystore('my-strong-password')
+console.log(JSON.stringify(keystore))
+// → { version: 3, crypto: { ... }, address: "omne1..." }
+
+// Later, restore from keystore
+const restored = await WalletAccount.fromKeystore(keystore, 'my-strong-password')
+```
+
+## Browser key storage
+
+For web applications, store mnemonics in IndexedDB with AES-GCM encryption — never `localStorage`. See the [Key Storage](/architecture/key-storage) architecture guide for the canonical pattern used across all OmneDAO products.

@@ -1,0 +1,55 @@
+# Genesis Initialization
+
+Genesis initialization creates the genesis manifest — accounts, validators, fee routing, and economic parameters — and writes it to the data directory.
+
+## Initialize
+
+```bash
+omne-node init \
+  --data-dir ~/.omne/data \
+  --network devnet \
+  --auto-treasury
+```
+
+This reads the network profile defaults (devnet: 2 genesis validators, 15–28 OGT stake range, 3s commerce / 9m security cadence) and produces `~/.omne/data/genesis.toml`.
+
+## Custom treasury allocations
+
+```bash
+omne-node init \
+  --data-dir ~/.omne/data \
+  --network devnet \
+  --auto-treasury \
+  --treasury-omc-quar 10000000000000000000 \
+  --treasury-ogt-gluu 25000000
+```
+
+## External genesis manifest
+
+You can supply your own genesis manifest by placing a `genesis.toml` at `<data-dir>/genesis.toml` before running `omne-node init`. The init step detects it and skips generation.
+
+## What init produces
+
+| Artefact | Description |
+|---|---|
+| `config.toml` | Node configuration |
+| `genesis.toml` | Genesis manifest (accounts, validators, economics) |
+| SQLite archives | Reward distribution tracking |
+| RocksDB directories | Persistent state storage |
+
+## Re-genesis guard
+
+Running `init` twice against the same directory is guarded to prevent accidental re-genesis. Remove the directory if you need a clean slate:
+
+```bash
+rm -rf ~/.omne/data
+omne-node init --data-dir ~/.omne/data --network devnet --auto-treasury
+```
+
+## Network profiles
+
+| Network | Commerce cadence | Security cadence | Validators | Stake range |
+|---|---|---|---|---|
+| `devnet` | 3 seconds | 9 minutes | 2 genesis | 15–28 OGT |
+| `testum` | 3 seconds | 9 minutes | TBD | TBD |
+| `principalis` | 3 seconds | 9 minutes | TBD | TBD |

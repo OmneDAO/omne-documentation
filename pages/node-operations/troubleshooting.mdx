@@ -1,0 +1,128 @@
+# Troubleshooting
+
+Common issues and their resolutions when operating `omne-node`.
+
+## Build errors
+
+### "error[E0554]: `#![feature]` may not be used on the stable release channel"
+
+You're not on the nightly toolchain. Fix:
+
+```bash
+rustup default nightly-2026-02-10
+```
+
+### Missing system dependencies
+
+If you see linker errors referencing `ssl`, `crypto`, or `clang`:
+
+```bash
+# macOS
+brew install pkg-config openssl cmake
+
+# Ubuntu
+sudo apt-get install pkg-config libssl-dev clang cmake
+```
+
+## Startup errors
+
+### "Data directory already contains genesis state"
+
+The `init` command guards against accidental re-genesis. Remove the data directory for a clean start:
+
+```bash
+rm -rf ~/.omne/data
+```
+
+### "Failed to bind to address"
+
+Another process is using the port. Check and free it:
+
+```bash
+lsof -i :9944
+kill -TERM <PID>
+```
+
+Or use a different port:
+
+```bash
+omne-node validator start --bind 0.0.0.0:9946 ...
+```
+
+### "Bootstrap peer unreachable"
+
+Verify the bootstrap peer address format:
+
+```
+/ip4/<IP>/tcp/<PORT>/p2p/<PEER_ID>
+```
+
+Ensure:
+- The genesis node is running and accessible
+- Firewall rules allow the P2P port
+- The peer ID matches the running node (check its startup logs)
+
+## RPC errors
+
+### `token_missing` or `nonce_missing`
+
+The node has deployment guardrails enabled. Set your RPC token:
+
+```bash
+export OMNE_RPC_TOKEN="your-api-token"
+```
+
+The CLI automatically injects `Authorization: Bearer` and `X-Omne-Nonce` headers.
+
+### `duplicate_nonce`
+
+The nonce was already used. This is normally handled automatically by the CLI. If you're making raw HTTP requests, generate a fresh nonce per request.
+
+### `rpc_method_not_allowed`
+
+Your API key is scoped to a restricted method profile. Request a token with the appropriate access level (e.g., `FullAccess` instead of `Observer`).
+
+## State corruption
+
+If the node exits uncleanly (e.g., `kill -9`), the RocksDB WAL may be incomplete. Symptoms:
+
+- Node fails to start with "corruption" or "WAL" errors
+- Missing blocks after restart
+
+Resolution:
+
+```bash
+# Remove corrupted state and re-sync from peers
+rm -rf ~/.omne/data
+omne-node start --bootstrap-peers "..." ...
+```
+
+import { Callout } from 'nextra/components'
+
+<Callout type="warning">
+  Always use `SIGTERM` (Ctrl-C or `kill -TERM`) for graceful shutdown. RocksDB needs to flush its write-ahead log to disk before exiting.
+</Callout>
+
+## Performance
+
+### High CPU usage
+
+Check log verbosity — `RUST_LOG=trace` generates significant overhead:
+
+```bash
+RUST_LOG=info omne-node validator start ...
+```
+
+### High disk usage (archive nodes)
+
+Archive nodes grow unboundedly. If disk is limited, use receipt retention limits:
+
+```bash
+omne-node start --receipt-archive false --receipt-retention-blocks 100000 ...
+```
+
+## Getting help
+
+- Check the [node operations overview](/node-operations) for setup guidance
+- Review [monitoring](/node-operations/monitoring) for health check and metrics
+- Report issues at [github.com/omnelabs/omne-blockchain](https://github.com/omnelabs/omne-blockchain/issues)

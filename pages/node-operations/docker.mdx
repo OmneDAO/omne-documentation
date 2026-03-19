@@ -1,0 +1,90 @@
+# Docker Workflow
+
+Docker provides isolation while preserving the same commands you'd run bare-metal.
+
+## Build the image
+
+```bash
+docker build \
+  -f omne-blockchain/Dockerfile \
+  -t omne/node:local \
+  .
+```
+
+## Run a genesis validator
+
+```bash
+docker run -d \
+  --name omne-genesis \
+  -p 9944:8545 \
+  -p 30303:30303 \
+  -p 9090:9090 \
+  -v omne-genesis-data:/data \
+  -v omne-genesis-keys:/keys \
+  -e RUST_LOG=info \
+  omne/node:local \
+  omne-node validator start \
+    --data-dir /data \
+    --network devnet \
+    --bind 0.0.0.0:8545 \
+    --p2p-port 30303 \
+    --validator-stake 22 \
+    --storage rocksdb
+```
+
+## Run an archive node
+
+```bash
+docker run -d \
+  --name omne-archive \
+  -p 9945:8545 \
+  -p 30304:30303 \
+  -v omne-archive-data:/data \
+  -e RUST_LOG=info \
+  omne/node:local \
+  omne-node start \
+    --data-dir /data \
+    --network devnet \
+    --bind 0.0.0.0:8545 \
+    --p2p-port 30303 \
+    --storage rocksdb \
+    --receipt-archive true \
+    --bootstrap-peers "/ip4/<HOST_IP>/tcp/30303/p2p/<PEER_ID>"
+```
+
+## Shutdown and cleanup
+
+```bash
+# Stop containers
+docker stop omne-genesis omne-archive
+
+# Remove containers
+docker rm omne-genesis omne-archive
+
+# Remove volumes (destroys all chain state)
+docker volume rm omne-genesis-data omne-genesis-keys omne-archive-data
+```
+
+### Full Docker cleanup
+
+```bash
+# Remove locally built images
+docker rmi $(docker images 'omne/*' -q) 2>/dev/null || true
+
+# Prune builder cache
+docker builder prune -af
+```
+
+## Health checks
+
+The node exposes a health endpoint usable as a Docker `HEALTHCHECK`:
+
+```bash
+curl -f http://localhost:9944/health
+# Returns "healthy" with HTTP 200
+```
+
+```dockerfile
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+  CMD curl -f http://localhost:8545/health || exit 1
+```

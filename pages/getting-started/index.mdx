@@ -1,0 +1,39 @@
+# Getting Started
+
+This guide takes you from zero to your first on-chain transaction. By the end you will have:
+
+1. Installed the `@omne/sdk` package
+2. Generated a wallet with a BIP39 mnemonic
+3. Derived an Omne address
+4. Submitted a signed transaction to the network
+
+## Prerequisites
+
+- **Node.js** 16+ (LTS recommended)
+- **npm**, **pnpm**, or **yarn**
+- Access to an Omne RPC endpoint (devnet: `http://localhost:9944`)
+
+## What you'll learn
+
+| Concept | Description |
+|---|---|
+| Wallet generation | BIP39 mnemonic → SLIP-0010 ed25519 key derivation → `omne1...` address |
+| Transaction signing | Client-side ed25519 signing — private keys never leave your device |
+| RPC interaction | JSON-RPC 2.0 over HTTP or WebSocket via `OmneClient` |
+| Fee model | Microscopic fees denominated in Quar (1 OMC = 10¹⁸ Quar) |
+
+import { Steps } from 'nextra/components'
+
+<Steps>
+### Install the SDK
+
+See [Installation](/getting-started/installation) for setup instructions.
+
+### Create a wallet
+
+See [Create a Wallet](/getting-started/first-wallet) to generate keys and derive an address.
+
+### Send a transaction
+
+See [First Transaction](/getting-started/first-transaction) to sign and submit on-chain.
+</Steps>

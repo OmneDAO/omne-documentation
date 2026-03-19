@@ -1,0 +1,58 @@
+# Validator Keys
+
+Each validator needs a **controller keypair** (operator identity) and a **consensus keypair** (block signing). The CLI generates both and writes an encrypted archive.
+
+## Generate keys
+
+```bash
+omne-node validator keys generate \
+  --output-dir ~/.omne/keys \
+  --label "genesis-validator"
+```
+
+You'll be prompted for a passphrase. For automation, supply one via file:
+
+```bash
+omne-node validator keys generate \
+  --output-dir ~/.omne/keys \
+  --label "genesis-validator" \
+  --passphrase-file /path/to/passphrase.txt \
+  --skip-passphrase-confirmation
+```
+
+## Key archive format
+
+The archive is stored as encrypted JSON with:
+
+- Controller and consensus public/private keys (hex-encoded)
+- Blake3 fingerprints for quick verification
+- Optional user label
+- UTC timestamp of generation
+
+## Inspect keys
+
+View public keys (default — private keys are not shown):
+
+```bash
+omne-node validator keys inspect \
+  --path ~/.omne/keys/genesis-validator.json \
+  --passphrase-file /path/to/passphrase.txt
+```
+
+Pass `--raw` to print the full JSON payload.
+
+## Security
+
+import { Callout } from 'nextra/components'
+
+<Callout type="error">
+  Key archives are encrypted at rest. Never commit passphrase files to version control. In production, use a secrets manager or HSM.
+</Callout>
+
+Best practices:
+
+- Store key archives on encrypted volumes
+- Use separate passphrases per validator
+- Back up archives to offline storage
+- Rotate keys periodically
+- Use `--label` consistently for identification across environments

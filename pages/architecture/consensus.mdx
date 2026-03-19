@@ -1,0 +1,87 @@
+# PoVERA Consensus
+
+**PoVERA** — Proof of Validated Execution & Randomness Attestation — is Omne's dual-layer consensus protocol. It provides fast commerce-grade finality with periodic security-grade attestation.
+
+## Dual-layer architecture
+
+| Layer | Cadence | Purpose |
+|---|---|---|
+| **Commerce** | 3 seconds | Fast finality for everyday transactions — payments, token transfers, contract calls |
+| **Security** | 9 minutes | Cross-chain security guarantees, validator attestation, randomness beacon, finality anchoring |
+
+### Why two layers?
+
+Most blockchain transactions are commerce — payments, transfers, token operations. These need sub-second-to-seconds finality to be useful in real-world payment flows. But cryptographic security operations (randomness attestation, cross-chain bridges, validator rotation) benefit from longer windows with more attestation rounds.
+
+PoVERA separates these concerns:
+
+- **Commerce blocks** are produced every 3 seconds. Transactions achieve finality in a single commerce round. This is the layer most users and applications interact with.
+- **Security blocks** are produced every 9 minutes (180 commerce blocks). They aggregate attestations, anchor commerce-layer finality, rotate randomness beacons, and provide the cryptographic backbone for cross-chain operations.
+
+## Validator participation
+
+Every validator participates in both layers:
+
+1. **Commerce round**: Validators propose and attest to commerce blocks in rapid rotation. Block production is weighted by stake.
+2. **Security round**: Every 180 commerce blocks, validators produce a security block containing:
+   - RANDAO attestation (randomness contribution)
+   - Commerce-layer finality certificate
+   - Validator set updates (entries, exits, slashing)
+   - Cross-chain anchor data
+
+## Deterministic execution
+
+Execution is deterministic across OS, CPU, and runtime version. This is enforced by:
+
+- Deterministic gas accounting (no floating-point, no non-deterministic syscalls)
+- WASM execution with bounded memory
+- Canonical transaction ordering within blocks
+- Cross-platform test suite verifying identical state roots
+
+## Block structure
+
+### Commerce block
+
+```
+┌─────────────────────────────────┐
+│ Block Header                     │
+│  ├── height                     │
+│  ├── parent_hash                │
+│  ├── state_root                 │
+│  ├── transactions_root          │
+│  ├── timestamp                  │
+│  └── proposer                   │
+├─────────────────────────────────┤
+│ Transactions                     │
+│  ├── transfers                  │
+│  ├── contract calls             │
+│  ├── token operations           │
+│  └── computational job results  │
+└─────────────────────────────────┘
+```
+
+### Security block
+
+```
+┌─────────────────────────────────┐
+│ Security Block Header            │
+│  ├── security_height            │
+│  ├── commerce_range [N..N+179]  │
+│  ├── randao_reveal              │
+│  └── finality_certificate       │
+├─────────────────────────────────┤
+│ Attestations                     │
+│  ├── validator attestations     │
+│  ├── slashing evidence          │
+│  └── validator set changes      │
+└─────────────────────────────────┘
+```
+
+## Finality
+
+- **Commerce finality**: Achieved within a single commerce round (~3 seconds). Sufficient for payments and application interactions.
+- **Security finality**: Achieved when a security block is produced (~9 minutes). Required for cross-chain bridges and high-value settlement.
+
+Applications can specify transaction priority:
+- `commerce` — default, fast finality
+- `security` — wait for security-layer confirmation

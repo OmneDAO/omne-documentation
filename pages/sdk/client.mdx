@@ -1,0 +1,354 @@
+# OmneClient
+
+`OmneClient` is the primary interface for communicating with an Omne blockchain node over JSON-RPC 2.0. It supports both HTTP and WebSocket transports.
+
+## Constructor
+
+```typescript
+import { OmneClient } from '@omne/sdk'
+
+// Simple — just a URL
+const client = new OmneClient('http://localhost:9944')
+
+// Full config
+const client = new OmneClient({
+  url: 'http://localhost:9944',
+  timeout: 30000,        // request timeout (ms)
+  retries: 3,            // automatic retry on transient failure
+  headers: {},           // custom HTTP headers
+  authToken: 'secret',   // Bearer token for authenticated endpoints
+})
+```
+
+### Factory
+
+```typescript
+import { createClient } from '@omne/sdk'
+
+const client = createClient('primum')       // local devnet
+const client = createClient('testum')       // testnet
+const client = createClient('principalis')  // mainnet
+```
+
+## Connection lifecycle
+
+```typescript
+await client.connect()
+// ... use the client ...
+await client.disconnect()
+```
+
+---
+
+## Network information
+
+### `getNetworkInfo()`
+
+```typescript
+const info = await client.getNetworkInfo()
+// { chainId, networkName, protocolVersion, ... }
+```
+
+### `getServiceRegistry()`
+
+```typescript
+const registry = await client.getServiceRegistry()
+```
+
+---
+
+## Accounts and balances
+
+### `getBalance(address)`
+
+```typescript
+const balance = await client.getBalance('omne1...')
+
+balance.address      // "omne1..."
+balance.balance      // raw string
+balance.balanceQuar  // u128 as string
+balance.balanceOMC   // human-readable decimal
+balance.lastUpdated  // timestamp
+```
+
+### `getTransactionCount(address)`
+
+Returns the account nonce — use this for transaction sequencing.
+
+```typescript
+const nonce = await client.getTransactionCount('omne1...')
+```
+
+---
+
+## Transactions
+
+### `transfer(params)`
+
+High-level transfer that constructs, signs, and submits in one call.
+
+```typescript
+const receipt = await client.transfer({
+  from: 'omne1sender...',
+  to: 'omne1recipient...',
+  valueOMC: '1.5',
+  gasLimit: 21000,           // optional, default 21000
+  gasPriceQuar: '1000',     // optional, default '1000'
+  nonce: 0,                  // optional, auto-fetched
+  priority: 'commerce',      // optional: 'commerce' | 'standard' | 'security'
+})
+```
+
+### `sendTransaction(signedTx)`
+
+Submit a pre-signed transaction.
+
+```typescript
+const receipt = await client.sendTransaction(signed)
+```
+
+### `getTransactionReceipt(txHash)`
+
+```typescript
+const receipt = await client.getTransactionReceipt('txn_a1b2c3...')
+// null if not yet mined
+```
+
+### `waitForTransaction(txHash, timeoutMs?, pollingIntervalMs?)`
+
+Block until the transaction is included in a block.
+
+```typescript
+const receipt = await client.waitForTransaction('txn_a1b2c3...', 30000)
+```
+
+---
+
+## Blocks
+
+### `getBlock(blockNumber | 'latest')`
+
+```typescript
+const latest = await client.getBlock('latest')
+
+latest.number        // block height
+latest.hash          // block hash
+latest.layer         // 'commerce' | 'security'
+latest.timestamp     // unix timestamp
+latest.transactions  // transaction hashes in this block
+```
+
+---
+
+## Gas and fees
+
+### `estimateGas(transaction)`
+
+```typescript
+const gas = await client.estimateGas({
+  from: 'omne1...',
+  to: 'omne1...',
+  value: '1000000000000000000',
+})
+// → 21000
+```
+
+### `estimateFees(transaction)`
+
+```typescript
+const fees = await client.estimateFees({ ... })
+```
+
+---
+
+## ORC-20 tokens
+
+### `deployORC20Token(params)`
+
+Deploy a new ORC-20 token contract.
+
+```typescript
+const { token, receipt } = await client.deployORC20Token({
+  name: 'My Token',
+  symbol: 'MTK',
+  totalSupply: '1000000',
+  decimals: 18,
+  from: account.address,
+  config: {
+    inheritsMicroscopicFees: true,
+    mintable: true,
+    burnable: false,
+  },
+})
+
+console.log('Token address:', token.address)
+```
+
+### `getTokenInfo(tokenAddress)`
+
+```typescript
+const info = await client.getTokenInfo('contract_...')
+// { name, symbol, totalSupply, decimals, ... }
+```
+
+### `getTokenBalance(tokenAddress, holderAddress)`
+
+```typescript
+const balance = await client.getTokenBalance('contract_...', 'omne1...')
+```
+
+### `tokenTransfer(params)`
+
+```typescript
+await client.tokenTransfer({
+  tokenAddress: 'contract_...',
+  from: 'omne1sender...',
+  to: 'omne1recipient...',
+  amount: '100',
+})
+```
+
+---
+
+## Contracts
+
+### `deployContract(plan)`
+
+Deploy a contract from an execution plan.
+
+```typescript
+const result = await client.deployContract(plan)
+
+result.contractAddress  // "contract_..."
+result.transactionId    // "txn_..."
+result.blockHeight      // number
+```
+
+### `contractCall(params)`
+
+Call a contract method.
+
+```typescript
+const result = await client.contractCall({
+  contractAddress: 'contract_...',
+  method: 'balanceOf',
+  args: ['omne1holder...'],
+  from: 'omne1caller...',
+})
+```
+
+---
+
+## Computational jobs (OON)
+
+### `submitComputationalJob(request)`
+
+Submit a computational job to the Omne Orchestration Network.
+
+```typescript
+const job = await client.submitComputationalJob({
+  type: 'compute',
+  payload: { /* ... */ },
+})
+
+console.log('Job ID:', job.id)
+```
+
+### `getJobStatus(jobId)`
+
+```typescript
+const status = await client.getJobStatus(job.id)
+```
+
+---
+
+## Validator and staking
+
+### `getDynamicStakeInfo()`
+
+```typescript
+const stakeInfo = await client.getDynamicStakeInfo()
+```
+
+### `getValidatorPerformance(address)`
+
+```typescript
+const perf = await client.getValidatorPerformance('omne1validator...')
+```
+
+### `calculateValidatorRewards(address, baseReward?)`
+
+```typescript
+const rewards = await client.calculateValidatorRewards('omne1validator...')
+
+rewards.baseReward        // string
+rewards.performanceBonus  // string
+rewards.longevityBonus    // string
+rewards.totalReward       // string
+rewards.bonusPercentage   // number
+```
+
+### `estimateOptimalStake(targetPerformance?)`
+
+```typescript
+const optimal = await client.estimateOptimalStake(0.95)
+
+optimal.recommendedStake    // string
+optimal.minimumRequired     // string
+optimal.expectedReturns     // { monthly, annual }
+optimal.riskFactors         // string[]
+```
+
+---
+
+## Network metrics
+
+### `getNetworkMetrics()`
+
+```typescript
+const metrics = await client.getNetworkMetrics()
+
+metrics.utilization           // 0.0–1.0
+metrics.activeValidators      // number
+metrics.averageStake          // string
+metrics.totalStaked           // string
+metrics.networkHealth         // 0.0–1.0
+metrics.crossSubsidyRate      // number
+metrics.computationalRevenue  // string
+```
+
+---
+
+## WebSocket subscriptions
+
+Available when connected via WebSocket (`ws://` or `wss://`):
+
+```typescript
+const client = new OmneClient('ws://localhost:9944')
+await client.connect()
+
+const sub = await client.subscribe('newBlock', (block) => {
+  console.log('New block:', block.number, block.layer)
+})
+
+// Later
+await client.unsubscribe(sub.id)
+```
+
+---
+
+## Error classes
+
+```typescript
+import {
+  OmneSDKError,     // Base class
+  NetworkError,      // Connection/transport failures
+  TransactionError,  // Transaction rejected or failed
+  ValidationError,   // Invalid parameters
+  WalletError,       // Wallet/signing errors
+  GuardrailError,    // Runtime guardrail violations
+  RPCError,          // JSON-RPC error responses
+} from '@omne/sdk'
+```
+
+All errors extend `OmneSDKError` and include a `message` and `code` property.

@@ -1,0 +1,72 @@
+# SDK Reference
+
+The `@omne/sdk` is the official TypeScript/JavaScript SDK for the Omne blockchain. It provides everything needed to build applications that interact with the network: wallet generation, transaction signing, RPC communication, token management, and contract deployment.
+
+## Install
+
+```bash npm2yarn
+npm install @omne/sdk
+```
+
+## Package overview
+
+| Export | Purpose |
+|---|---|
+| `Wallet` | BIP39 mnemonic generation, SLIP-0010 ed25519 HD derivation |
+| `WalletAccount` | Individual account keypair with signing methods |
+| `WalletManager` | Multi-wallet orchestration |
+| `OmneClient` | JSON-RPC client (HTTP, WebSocket) for all blockchain operations |
+| `OmneContract` | Contract interaction abstraction |
+| `createClient()` | Factory for named network connections |
+| Utilities | Address validation, balance formatting, gas estimation, signature verification |
+| Error classes | Typed errors: `TransactionError`, `NetworkError`, `WalletError`, `RPCError`, etc. |
+
+## Quick start
+
+```typescript
+import { Wallet, OmneClient } from '@omne/sdk'
+
+// Generate a wallet
+const wallet = Wallet.generate()
+const account = wallet.getAccount(0)
+console.log('Address:', account.address) // omne1...
+
+// Connect to the network
+const client = new OmneClient('http://localhost:9944')
+
+// Check balance
+const balance = await client.getBalance(account.address)
+console.log(`${balance.balanceOMC} OMC`)
+
+// Transfer OMC
+const receipt = await client.transfer({
+  from: account.address,
+  to: 'omne1recipient...',
+  valueOMC: '1.0',
+})
+console.log('Tx:', receipt.transactionId)
+```
+
+## Supported environments
+
+| Environment | Support |
+|---|---|
+| Node.js 18+ | Full (native fetch) |
+| Node.js 16–17 | Full (requires `node-fetch` polyfill) |
+| Chrome 80+ | Full |
+| Firefox 80+ | Full |
+| Safari 14+ | Full |
+| Edge 80+ | Full |
+| React Native | Via `setPlatformProviders()` |
+| Cloudflare Workers | Via `setPlatformProviders()` |
+
+## Build targets
+
+The SDK ships four build outputs:
+
+| Target | Path | Use case |
+|---|---|---|
+| CJS | `dist/cjs/` | Node.js `require()` |
+| ESM | `dist/esm/` | Modern bundlers, `import` |
+| Browser | `dist/browser/` | Direct browser imports |
+| Types | `dist/types/` | TypeScript declarations |

@@ -1,0 +1,31 @@
+# Full Node
+
+A full node syncs the blockchain and serves RPC queries but does **not** participate in consensus or retain full receipt history.
+
+## Start a full node
+
+```bash
+omne-node start \
+  --data-dir ~/.omne/full \
+  --network devnet \
+  --bind 0.0.0.0:9945 \
+  --p2p-port 30304 \
+  --storage rocksdb \
+  --bootstrap-peers "/ip4/<GENESIS_IP>/tcp/30303/p2p/<GENESIS_PEER_ID>"
+```
+
+## When to use a full node
+
+- **Application backends** — serve balance queries and transaction submission without consensus overhead
+- **Development** — sync state without running a validator
+- **Load balancing** — distribute RPC traffic across multiple full nodes
+
+## Comparison
+
+| Feature | Full node | Archive node | Validator |
+|---|---|---|---|
+| Syncs chain | ✅ | ✅ | ✅ |
+| Serves RPC | ✅ | ✅ | ✅ |
+| Block production | ❌ | ❌ | ✅ |
+| Full receipt history | ❌ (pruned) | ✅ | ❌ (pruned) |
+| Disk requirements | Moderate | High (grows with chain) | Moderate |

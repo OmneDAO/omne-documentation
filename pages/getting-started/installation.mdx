@@ -1,0 +1,66 @@
+# Installation
+
+## Install via npm
+
+```bash npm2yarn
+npm install @omne/sdk
+```
+
+## Node.js fetch requirement
+
+The SDK uses the Fetch API internally. Node.js 18+ includes `fetch` globally. For Node.js 16–17, install a polyfill:
+
+```bash
+npm install node-fetch
+```
+
+Then set the platform provider before using the SDK:
+
+```typescript
+import fetch from 'node-fetch'
+import { setPlatformProviders } from '@omne/sdk'
+
+setPlatformProviders({
+  fetch: fetch as any,
+})
+```
+
+Node.js 18+ and all modern browsers require no additional setup.
+
+## Import
+
+```typescript
+// ES Modules (recommended)
+import { Wallet, OmneClient, createClient } from '@omne/sdk'
+
+// CommonJS
+const { Wallet, OmneClient, createClient } = require('@omne/sdk')
+```
+
+## Browser usage
+
+The SDK ships a browser-optimised bundle. Most bundlers (Vite, webpack, esbuild, Turbopack) resolve the `browser` field in `package.json` automatically:
+
+```html
+<script type="module">
+  import { Wallet, OmneClient } from '@omne/sdk'
+  // Ready to use
+</script>
+```
+
+## Verify installation
+
+```typescript
+import { SDK_INFO } from '@omne/sdk'
+
+console.log(SDK_INFO.name)     // "@omne/sdk"
+console.log(SDK_INFO.version)  // "0.3.0"
+```
+
+## TypeScript support
+
+Full type declarations ship with the package — no `@types` install needed. The SDK targets ES2017 and includes `.d.ts` files for all exports.
+
+```typescript
+import type { Transaction, TransactionReceipt, Balance } from '@omne/sdk'
+```

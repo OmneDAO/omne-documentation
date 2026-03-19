@@ -1,0 +1,114 @@
+# Fee Model & Economics
+
+Omne's economic model prioritises **accessibility over revenue**. Fees exist to prevent spam, not to generate income.
+
+## Microscopic fees
+
+| Operation | Typical fee |
+|---|---|
+| OMC transfer | ~0.000001 OMC |
+| Token transfer | ~0.000002 OMC |
+| Contract deployment | ~0.001 OMC |
+| Contract call | ~0.00001 OMC |
+
+## Denomination
+
+| Unit | Value |
+|---|---|
+| 1 OMC | 10¹⁸ Quar |
+| 1 Quar | Smallest unit (like wei in Ethereum) |
+
+Gas price is denominated in Quar. The default gas price is `1000` Quar.
+
+```typescript
+import { toQuar, fromQuar, formatBalance } from '@omne/sdk'
+
+toQuar('1.5')                               // "1500000000000000000"
+fromQuar('1500000000000000000')             // "1.5"
+formatBalance('1500000000000000000')        // "1.500000000000000000 OMC"
+```
+
+## Anti-spam (non-fee controls)
+
+Rather than raising fees to discourage spam, Omne uses dedicated controls:
+
+### Rate limiting
+- **Per-peer**: Each P2P peer has bandwidth and message rate limits
+- **Per-account**: Transaction submission rate limited per sender address
+- **Per-IP**: RPC endpoint rate limiting with configurable quotas
+
+### Quality of Service
+- **Stake-weighted QoS**: Validator messages prioritised by stake
+- **Message priority**: Consensus messages survive overload; low-priority traffic is shed first
+
+### Circuit breakers
+- **Mempool flood protection**: Backpressure when mempool exceeds threshold
+- **RPC overload shedding**: HTTP 429 responses with `X-RateLimit-*` headers
+
+### API key quotas
+
+Operator-provisioned API keys can carry per-key rate limits:
+
+```json
+{
+  "key": "partner-token",
+  "profile": "observer",
+  "quota": {
+    "requests_per_minute": 120,
+    "burst": 12
+  }
+}
+```
+
+## Fee routing
+
+Transaction fees are split between:
+
+1. **Validator rewards** — distributed to the block proposer and attesters
+2. **Treasury** — funds protocol development and ecosystem grants
+
+The split ratio is configurable in the genesis manifest and can be adjusted via governance.
+
+## Validator rewards
+
+Validators earn rewards from:
+
+- **Block production fees** — share of transaction fees in blocks they produce
+- **Performance bonuses** — based on uptime and attestation participation
+- **Longevity bonuses** — for sustained participation in consensus
+
+```typescript
+const rewards = await client.calculateValidatorRewards('omne1validator...')
+
+rewards.baseReward        // base fee share
+rewards.performanceBonus  // uptime bonus
+rewards.longevityBonus    // participation duration bonus
+rewards.totalReward       // sum
+```
+
+## Staking
+
+Validators stake OGT (Omne Governance Token) to participate in consensus:
+
+| Network | Stake range |
+|---|---|
+| Devnet | 15–28 OGT |
+| Testum | TBD |
+| Principalis | TBD |
+
+The optimal stake can be estimated via the SDK:
+
+```typescript
+const optimal = await client.estimateOptimalStake(0.95)
+// { recommendedStake, minimumRequired, expectedReturns, riskFactors }
+```
+
+## Slashing
+
+Validators can be slashed for:
+
+- **Double signing** — signing conflicting blocks at the same height
+- **Extended downtime** — failing to participate in consensus for an extended period
+- **Malicious attestation** — submitting fraudulent attestation data
+
+Slashing outcomes are routed to either a burn address or the treasury, depending on the offense.

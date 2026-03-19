@@ -1,0 +1,159 @@
+# Contracts and Tokens
+
+The SDK provides abstractions for deploying and interacting with Omne smart contracts and ORC-20 tokens.
+
+## ORC-20 tokens
+
+ORC-20 is Omne's fungible token standard. Tokens deployed via the SDK inherit the network's microscopic fee structure by default.
+
+### Deploy a token
+
+```typescript
+import { OmneClient, Wallet } from '@omne/sdk'
+
+const client = new OmneClient('http://localhost:9944')
+const wallet = Wallet.fromMnemonic('your mnemonic ...')
+const account = wallet.getAccount(0)
+
+const { token, receipt } = await client.deployORC20Token({
+  name: 'Blox Token',
+  symbol: 'BXT',
+  totalSupply: '100000000',    // 100M tokens
+  decimals: 18,
+  from: account.address,
+  config: {
+    inheritsMicroscopicFees: true,
+    mintable: true,
+    burnable: true,
+  },
+})
+
+console.log('Token deployed at:', token.address)
+console.log('Block:', receipt.blockHeight)
+```
+
+### Query token info
+
+```typescript
+const info = await client.getTokenInfo(token.address)
+// { name: 'Blox Token', symbol: 'BXT', totalSupply: '100000000', decimals: 18 }
+```
+
+### Check a holder's balance
+
+```typescript
+const balance = await client.getTokenBalance(token.address, account.address)
+console.log(`Balance: ${balance} BXT`)
+```
+
+### Transfer tokens
+
+```typescript
+const receipt = await client.tokenTransfer({
+  tokenAddress: token.address,
+  from: account.address,
+  to: 'omne1recipient...',
+  amount: '1000',
+})
+```
+
+### Search tokens
+
+```typescript
+const results = await client.searchTokens({ symbol: 'BXT' })
+```
+
+---
+
+## Contract deployment
+
+For custom contracts (WASM bytecode), use the execution plan deployment flow.
+
+### `OmneContract`
+
+```typescript
+import { OmneContract, encodeContractCall } from '@omne/sdk'
+```
+
+### Deploy a contract
+
+```typescript
+const result = await client.deployContract({
+  bytecode: wasmBytes,            // Uint8Array or hex string
+  constructorArgs: [],             // ABI-encoded constructor arguments
+  from: account.address,
+  gasLimit: 500000,
+})
+
+console.log('Contract:', result.contractAddress)  // "contract_..."
+console.log('Tx:', result.transactionId)          // "txn_..."
+```
+
+### Call a contract method
+
+```typescript
+// Read-only call (no transaction)
+const result = await client.contractCall({
+  contractAddress: 'contract_...',
+  method: 'balanceOf',
+  args: ['omne1holder...'],
+  from: account.address,
+})
+```
+
+### Encode contract calls
+
+```typescript
+import { encodeContractCall, AbiEncode } from '@omne/sdk'
+
+const encoded = encodeContractCall('transfer', [
+  { type: 'address', value: 'omne1recipient...' },
+  { type: 'uint256', value: '1000000000000000000' },
+])
+```
+
+---
+
+## Execution plan deployment
+
+For audited, hardened deployments:
+
+```typescript
+import { ensureSignedCompilerAttachment } from '@omne/sdk'
+
+// Sign compiler metadata for reproducible builds
+const attachment = await ensureSignedCompilerAttachment(plan)
+
+// Submit the signed plan
+const result = await client.deployExecutionPlan(plan, {
+  attachment,
+  dryRun: false,
+})
+```
+
+### Query deployment plans
+
+```typescript
+// List all plans
+const plans = await client.listDeploymentPlans()
+
+// Get a specific plan
+const plan = await client.getDeploymentPlan(planId)
+
+// Look up by digest
+const plan = await client.getDeploymentPlanByDigest(digestHex)
+```
+
+---
+
+## Identifier conventions
+
+All on-chain identifiers use canonical prefixes:
+
+| Type | Format | Example |
+|---|---|---|
+| Wallet address | `omne1{40 hex}` | `omne1a3f7c9b2d...` |
+| Contract address | `contract_{40 hex}` | `contract_5e8f1a...` |
+| Transaction ID | `txn_{64 hex}` | `txn_7b3c4d...` |
+
+The SDK validates these formats automatically and rejects malformed identifiers.

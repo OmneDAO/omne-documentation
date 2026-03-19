@@ -1,0 +1,44 @@
+# Archive Node
+
+An archive node syncs the full chain and retains all commerce receipts indefinitely. It does **not** participate in consensus.
+
+## Start an archive node
+
+```bash
+omne-node start \
+  --data-dir ~/.omne/archive \
+  --network devnet \
+  --bind 0.0.0.0:9945 \
+  --p2p-port 30304 \
+  --storage rocksdb \
+  --receipt-archive true \
+  --bootstrap-peers "/ip4/<GENESIS_IP>/tcp/30303/p2p/<GENESIS_PEER_ID>"
+```
+
+## Key differences from a validator
+
+| Aspect | Validator | Archive node |
+|---|---|---|
+| Command | `omne-node validator start` | `omne-node start` |
+| Consensus | ✅ Produces blocks | ❌ Syncs only |
+| `--receipt-archive` | Typically `false` | `true` |
+| Disk usage | Bounded (pruning) | Unbounded (full history) |
+
+## Limited receipt retention
+
+If you don't need full history but want more than the default pruning window:
+
+```bash
+omne-node start \
+  --data-dir ~/.omne/data \
+  --receipt-archive false \
+  --receipt-retention-blocks 100000 \
+  --bootstrap-peers "..."
+```
+
+## Use cases
+
+- **Block explorers** — need full transaction history for search and display
+- **Analytics** — aggregate historical data for dashboards and reports
+- **Auditing** — complete receipt trail for compliance and verification
+- **API services** — serve historical queries that validators have pruned
