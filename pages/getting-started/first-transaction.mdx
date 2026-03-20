@@ -13,12 +13,13 @@ This guide walks through submitting a signed OMC transfer to the Omne blockchain
 ```typescript
 import { Wallet, OmneClient } from '@omne/sdk'
 
-// Connect to a local devnet node
-const client = new OmneClient('http://localhost:9944')
+// Connect to Ignis alpha network
+const client = new OmneClient('https://ignis.omne.network/rpc')
 
 // Or use a named network
 import { createClient } from '@omne/sdk'
-const client = createClient('primum')
+const client = createClient('ignis')   // alpha devnet
+// const client = createClient('primum')  // mainnet (future)
 ```
 
 ## Check your balance
