@@ -1,33 +1,304 @@
 # Validator Node
 
-A validator participates in PoVERA consensus — producing commerce blocks at 3-second cadence and security blocks at 9-minute cadence.
+import { Callout, Steps, Tabs } from 'nextra/components'
 
-## Start the genesis validator
+A validator participates in PoVERA consensus — producing commerce blocks at 3-second cadence and security blocks at 9-minute cadence. This guide covers everything you need to launch an independent validator on any Linux server.
 
-The genesis validator is the first node on the network. It creates block 0 and begins block production:
+## Why Run a Validator?
+
+Omne is a Layer 1 blockchain built on **PoVERA consensus** — a dual-layer architecture where commerce blocks finalize every 3 seconds and security blocks anchor state every 9 minutes. Every validator that joins the network directly strengthens both layers.
+
+<Callout type="info" emoji="🎯">
+  **What:** You run a node that produces blocks, validates transactions, and earns rewards.
+  **How:** Install the binary, generate keys, connect to the network, and run as a service.
+  **Why:** More independent validators mean a stronger, more decentralized, more resilient network. Early validators on Ignis devnet are stress-testing consensus under real conditions — shaping the protocol before testnet and mainnet.
+</Callout>
+
+### What a validator does
+
+- **Produces commerce blocks** at 3-second cadence — instant finality for transactions
+- **Participates in security commits** at 9-minute cadence — Bitcoin-inspired anchoring of commerce state
+- **Validates and propagates transactions** — verifies every transaction, forwards valid ones to peers
+- **Contributes to network resilience** — geographic and infrastructure diversity makes the network harder to disrupt
+
+### How it works
+
+Install `omne-node` on a Linux server, generate encrypted validator keys, configure bootstrap peers, and run as a systemd service. The binary handles consensus, P2P networking, block production, and RPC. Once running, the node dials into the peer network, begins producing blocks, and earns rewards based on your stake and uptime.
+
+<Callout type="info">
+  The `--role validator` flag is equivalent to `omne-node validator start`. Both set the node to validator mode. Use `--role compute` for dedicated OON compute nodes that do not participate in consensus.
+</Callout>
+
+## Hardware Requirements
+
+| Resource | Minimum | Recommended |
+|----------|---------|-------------|
+| CPU      | 1 vCPU  | 2+ vCPU     |
+| RAM      | 1 GB    | 4 GB        |
+| Disk     | 20 GB SSD | 80 GB NVMe |
+| Network  | 100 Mbps | 1 Gbps     |
+
+Omne is designed for low-barrier validator participation. A 1-vCPU / 1 GB VPS is sufficient for devnet and early testnet.
+
+## Launch Guide
+
+<Steps>
+
+### Install Dependencies
+
+Update packages and install runtime libraries:
 
 ```bash
-omne-node validator start \
-  --data-dir ~/.omne/data \
-  --network devnet \
-  --bind 0.0.0.0:9944 \
-  --p2p-port 30303 \
-  --validator-stake 22 \
-  --storage rocksdb
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y ca-certificates curl libssl3
 ```
 
-### Flag reference
+### Install the Binary
 
-| Flag | Purpose |
-|---|---|
-| `--data-dir` | Where RocksDB state, blocks, and receipts are stored |
-| `--network` | Network profile (`devnet`, `testum`, `principalis`) |
-| `--bind` | RPC listen address (JSON-RPC 2.0) |
-| `--p2p-port` | libp2p listen port for peer communication |
-| `--validator-stake` | OGT stake amount (devnet: 15–28 range) |
-| `--storage` | `rocksdb` for persistence, `memory` for ephemeral test |
+Place the `omne-node` binary in the system path:
 
-### Log verbosity
+```bash
+sudo cp omne-node /usr/local/bin/omne-node
+sudo chmod +x /usr/local/bin/omne-node
+omne-node --version
+```
+
+### Create a Service User
+
+Run the node under a dedicated unprivileged user:
+
+```bash
+sudo useradd --system --no-create-home --shell /usr/sbin/nologin omne
+sudo mkdir -p /var/lib/omne/{data,keys}
+sudo mkdir -p /var/log/omne
+sudo chown -R omne:omne /var/lib/omne /var/log/omne
+```
+
+### Initialize the Chain
+
+Generate the genesis manifest and configuration template:
+
+```bash
+sudo omne-node init --network ignis --data-dir /var/lib/omne/data
+sudo chown -R omne:omne /var/lib/omne/data
+```
+
+### Configure the Node
+
+Edit `/var/lib/omne/data/config.toml`:
+
+**Set the bootstrap peer** (in the `[p2p]` section):
+
+```toml
+[p2p]
+bootstrap_peers = [
+    "/ip4/64.176.197.30/tcp/30303"
+]
+```
+
+**Enable validator mode** (in the `[validator]` section):
+
+```toml
+[validator]
+is_validator = true
+validator_stake = 22
+```
+
+<Callout>
+  The stake value must be within the network's allowed range — currently **15–28 OGT** for Ignis devnet.
+</Callout>
+
+### Generate Validator Keys
+
+Generate the controller and consensus keypairs:
+
+<Tabs items={['Interactive', 'Environment Variable', 'Passphrase File']}>
+  <Tabs.Tab>
+```bash
+omne-node validator keys generate \
+  --output-dir /var/lib/omne/keys \
+  --label "my-validator"
+```
+You will be prompted for an encryption passphrase.
+  </Tabs.Tab>
+  <Tabs.Tab>
+```bash
+OMNE_KEY_PASS="your-strong-passphrase" \
+  omne-node validator keys generate \
+    --output-dir /var/lib/omne/keys \
+    --label "my-validator" \
+    --passphrase-env OMNE_KEY_PASS \
+    --skip-passphrase-confirmation
+```
+  </Tabs.Tab>
+  <Tabs.Tab>
+```bash
+omne-node validator keys generate \
+  --output-dir /var/lib/omne/keys \
+  --label "my-validator" \
+  --passphrase-file /path/to/passphrase.txt \
+  --skip-passphrase-confirmation
+```
+  </Tabs.Tab>
+</Tabs>
+
+Secure the key file:
+
+```bash
+sudo chown omne:omne /var/lib/omne/keys/*.json
+sudo chmod 600 /var/lib/omne/keys/*.json
+```
+
+<Callout type="error">
+  Key archives are encrypted with ChaCha20-Poly1305 (Argon2id KDF). Never commit the passphrase to version control. In production, use a secrets manager.
+</Callout>
+
+### Create a systemd Service
+
+Create `/etc/systemd/system/omne-validator.service`:
+
+```ini
+[Unit]
+Description=Omne Validator Node
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=omne
+Group=omne
+Environment=OMNE_KEY_PASS=your-strong-passphrase
+
+ExecStart=/usr/local/bin/omne-node validator start \
+    --network ignis \
+    --data-dir /var/lib/omne/data \
+    --bind 0.0.0.0:9944 \
+    --p2p-port 30303 \
+    --validator-stake 22 \
+    --storage rocksdb \
+    --bootstrap-peers "/ip4/64.176.197.30/tcp/30303"
+
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=omne-validator
+
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/omne /var/log/omne
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
+```
+
+For production, use an `EnvironmentFile` instead of inline secrets:
+
+```bash
+sudo mkdir -p /etc/omne
+sudo bash -c 'echo "OMNE_KEY_PASS=your-strong-passphrase" > /etc/omne/validator.env'
+sudo chmod 600 /etc/omne/validator.env
+```
+
+Then replace `Environment=` with `EnvironmentFile=/etc/omne/validator.env` in the service file.
+
+### Start the Validator
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable omne-validator
+sudo systemctl start omne-validator
+```
+
+Watch the log stream:
+
+```bash
+journalctl -u omne-validator -f
+```
+
+A successful start shows:
+
+```
+🚀 Initializing Omne Blockchain Node...
+   Network: ignis (id 7)
+⚡ Starting Omne Blockchain Node...
+🔗 Starting P2P networking on port 30303...
+   🔗 Dialing bootstrap peer: /ip4/64.176.197.30/tcp/30303
+✅ Omne Blockchain Node is running!
+   🔐 Validator Mode: Active (Stake: 22 OGT)
+📈 Dual-Layer Consensus Active:
+   Commerce Layer: 3-second blocks (instant finality)
+   Security Layer: 9-minute blocks (Bitcoin-inspired security)
+   ✅ Connected to peer: 12D3KooW...
+```
+
+</Steps>
+
+## Verify Connectivity
+
+### Node status
+
+```bash
+curl -s http://127.0.0.1:9944/status | python3 -m json.tool
+```
+
+Key fields:
+
+| Field | Expected |
+|-------|----------|
+| `network.peer_count` | ≥ 1 |
+| `network.node_role` | `"validator"` |
+| `consensus.commerce_height` | Incrementing every ~3s |
+| `consensus.security_height` | Incrementing every ~60s (devnet) |
+
+### Validator-specific telemetry
+
+```bash
+omne-node validator status --rpc-endpoint http://127.0.0.1:9944
+```
+
+### Reward forecast
+
+```bash
+omne-node validator rewards \
+  --rpc-endpoint http://127.0.0.1:9944 \
+  --lookahead 10
+```
+
+## Firewall Rules
+
+```bash
+sudo ufw allow 30303/tcp comment "Omne P2P"    # Required
+sudo ufw allow 9944/tcp  comment "Omne RPC"     # Optional
+sudo ufw allow 22/tcp    comment "SSH"
+sudo ufw enable
+```
+
+<Callout>
+  If you don't need external RPC access, bind to localhost: `--bind 127.0.0.1:9944`. P2P must remain publicly accessible.
+</Callout>
+
+## Flag Reference
+
+| Flag | Purpose | Default |
+|------|---------|---------|
+| `--data-dir` | RocksDB state, blocks, and receipts | `~/.omne-nexus` |
+| `--network` | Network profile (`devnet`, `ignis`) | `devnet` |
+| `--bind` | RPC listen address (JSON-RPC 2.0) | `0.0.0.0:9944` |
+| `--p2p-port` | libp2p listen port | `30303` |
+| `--validator-stake` | OGT stake amount (15–28 range) | `22` |
+| `--storage` | `rocksdb` (persistent) or `memory` (ephemeral) | `rocksdb` |
+| `--bootstrap-peers` | Comma-separated multiaddrs | — |
+| `--revenue-smoothing-window` | Security blocks in smoothing window | `12` |
+| `--baseline-mode` | Revenue forecast baseline | `rolling-average` |
+| `--legacy-povc-compat` | Enable legacy PoVC payloads | enabled |
+| `--receipt-archive` | Store commerce receipts indefinitely | `false` |
+
+## Log Verbosity
 
 ```bash
 RUST_LOG=info omne-node validator start ...
@@ -35,60 +306,39 @@ RUST_LOG=info omne-node validator start ...
 
 Available levels: `error`, `warn`, `info`, `debug`, `trace`.
 
-## Start additional validators
-
-Additional validators join the network by bootstrapping from an existing node:
-
-```bash
-omne-node validator start \
-  --data-dir ~/.omne/data-v2 \
-  --network devnet \
-  --bind 0.0.0.0:9946 \
-  --p2p-port 30305 \
-  --validator-stake 22 \
-  --storage rocksdb \
-  --bootstrap-peers "/ip4/<GENESIS_IP>/tcp/30303/p2p/<GENESIS_PEER_ID>"
-```
-
-After the node syncs, register the validator on-chain:
-
-```bash
-omne-node validator register \
-  --rpc-endpoint http://127.0.0.1:9946 \
-  --operator-address <YOUR_OPERATOR_ADDRESS> \
-  --stake-ogt 22 \
-  --commission-bps 500
-```
-
-## Verify validator status
-
-```bash
-# Node status
-omne-node status --rpc-endpoint http://127.0.0.1:9944
-
-# Validator-specific telemetry
-omne-node validator status --rpc-endpoint http://127.0.0.1:9944
-
-# Reward forecast
-omne-node validator rewards \
-  --rpc-endpoint http://127.0.0.1:9944 \
-  --lookahead 10
-```
-
-## Stake planning
+## Stake Planning
 
 Project validator economics over time:
 
 ```bash
 omne-node validator stake \
-  --network devnet \
-  --amount 20 \
+  --network ignis \
+  --amount 22 \
   --horizon-days 45 \
   --label pilot-phase
 ```
 
-Output includes:
-- Allowed stake range (with manifest overrides)
-- Estimated network issuance per day
-- Per-validator share
-- Estimated breakeven in days
+Output includes: allowed stake range, estimated network issuance per day, per-validator share, and estimated breakeven in days.
+
+## Key Rotation
+
+Rotate keys periodically (recommended every 90 days):
+
+```bash
+omne-node validator keys rotate \
+  --output-dir /var/lib/omne/keys \
+  --label "my-validator"
+sudo systemctl restart omne-validator
+```
+
+## Troubleshooting
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| Exits with `Missing genesis.toml` | Chain not initialized | Run `omne-node init --network ignis --data-dir /var/lib/omne/data` |
+| `Permission denied` | Wrong file ownership | `sudo chown -R omne:omne /var/lib/omne` |
+| `Address already in use` | Port conflict | Check with `ss -tlnp \| grep 30303` |
+| `OMNE_KEY_PASS is not set` | Missing env var | Add to systemd service or env file |
+| No peers connecting | Firewall or wrong bootstrap IP | Verify port 30303 is open, check `config.toml` bootstrap_peers |
+| Commerce height stuck | Not connected to network | Check `peer_count` in `/status` |
+| Security height stuck | Normal on devnet | Security blocks are produced every 60s (devnet) or 540s (mainnet) |

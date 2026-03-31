@@ -9,13 +9,26 @@
 
 Omne runs on a single binary — `omne-node` — configured via CLI flags to operate in different modes:
 
-| Mode | Command | Consensus | Receipt retention |
-|---|---|---|---|
-| **Validator** | `omne-node validator start --validator-stake N` | ✅ Produces blocks | Pruned by default |
-| **Full node** | `omne-node start` | ❌ Syncs only | Pruned by default |
-| **Archive node** | `omne-node start --receipt-archive true` | ❌ Syncs only | Full history |
+### Core Roles
 
-All three modes use the same binary, same configuration format, and same RPC interface.
+The `--role` flag controls the node's network participation:
+
+| Role | Command | Consensus | OON Compute | Receipt retention |
+|---|---|---|---|---|
+| **Full node** | `omne-node start` (or `--role full`) | ❌ Syncs only | ❌ | Pruned by default |
+| **Validator** | `omne-node validator start --validator-stake N` (or `--role validator`) | ✅ Produces blocks | ✅ (idle capacity) | Pruned by default |
+| **Compute** | `omne-node start --role compute` | ❌ | ✅ (dedicated) | Pruned by default |
+
+### Capability Layers
+
+These are **orthogonal capabilities** layered on top of any role:
+
+| Capability | How to enable | Can combine with |
+|---|---|---|
+| **Archive** | `--receipt-archive true` | Any role |
+| **OMP Storage** | Register via `omne_ompRegisterStorageNode` RPC | Any role |
+
+All modes use the same binary, same configuration format, and same RPC interface.
 
 ## Prerequisites
 
@@ -52,7 +65,7 @@ Create the genesis manifest and data directory. See [Genesis Initialization](/no
 
 ### Start a node
 
-Run as a [Validator](/node-operations/validator), [Full Node](/node-operations/full-node), or [Archive Node](/node-operations/archive-node).
+Run as a [Validator](/node-operations/validator), [Full Node](/node-operations/full-node), [Archive Node](/node-operations/archive-node), [Compute Node](/node-operations/compute-node), or [Storage Node](/node-operations/storage-node).
 
 ### Monitor
 

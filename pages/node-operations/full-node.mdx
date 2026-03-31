@@ -1,6 +1,6 @@
 # Full Node
 
-A full node syncs the blockchain and serves RPC queries but does **not** participate in consensus or retain full receipt history.
+A full node syncs the blockchain and serves RPC queries but does **not** participate in consensus or retain full receipt history. This is the default role (`--role full`).
 
 ## Start a full node
 
@@ -22,10 +22,11 @@ omne-node start \
 
 ## Comparison
 
-| Feature | Full node | Archive node | Validator |
-|---|---|---|---|
-| Syncs chain | ✅ | ✅ | ✅ |
-| Serves RPC | ✅ | ✅ | ✅ |
-| Block production | ❌ | ❌ | ✅ |
-| Full receipt history | ❌ (pruned) | ✅ | ❌ (pruned) |
-| Disk requirements | Moderate | High (grows with chain) | Moderate |
+| Feature | Full node | Compute node | Archive node | Validator |
+|---|---|---|---|---|
+| Syncs chain | ✅ | ✅ | ✅ | ✅ |
+| Serves RPC | ✅ | ✅ | ✅ | ✅ |
+| Block production | ❌ | ❌ | ❌ | ✅ |
+| OON compute | ❌ | ✅ (dedicated) | ❌ | ✅ (idle capacity) |
+| Full receipt history | ❌ (pruned) | ❌ (pruned) | ✅ | ❌ (pruned) |
+| Disk requirements | Moderate | Moderate | High (grows with chain) | Moderate |

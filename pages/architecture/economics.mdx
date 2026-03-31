@@ -60,14 +60,18 @@ Operator-provisioned API keys can carry per-key rate limits:
 }
 ```
 
-## Fee routing
+## Fee recycling
 
-Transaction fees are split between:
+OMC is a $1 soft-pegged commerce token. Aggressively burning fees (as Ethereum does with ETH) would create deflationary pressure that breaks this peg. Instead, Omne uses **fee recycling**:
 
-1. **Validator rewards** — distributed to the block proposer and attesters
-2. **Treasury** — funds protocol development and ecosystem grants
+| Destination | Share | Purpose |
+|---|---|---|
+| Anti-spam burn | 8% | Permanently destroyed — deters spam |
+| Validator fee pool | 92% | Recycled to validators as income |
 
-The split ratio is configurable in the genesis manifest and can be adjusted via governance.
+The EIP-1559-style base fee *adjustment* still applies (fees rise under congestion, fall under low utilisation), but the *destination* is recycling rather than aggressive burning. This keeps OMC supply approximately neutral.
+
+The split is defined by `ANTI_SPAM_BURN_RATE = 0.08` and recycled fees are credited to `VALIDATOR_FEE_POOL_ACCOUNT`.
 
 ## Validator rewards
 
