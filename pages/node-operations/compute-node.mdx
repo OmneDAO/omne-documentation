@@ -1,0 +1,85 @@
+# Compute Node
+
+A compute node participates in **OON (Omne Offchain Network)** job execution without running consensus. It syncs the chain, serves RPC, and dedicates resources to offchain compute workloads.
+
+> **Role vs capability:** `--role compute` is a **node role** — it determines how the node participates in the network. Storage and Archive are orthogonal capabilities that can be layered on top.
+
+## Start a compute node
+
+```bash
+omne-node start \
+  --data-dir ~/.omne/compute \
+  --network devnet \
+  --role compute \
+  --bind 0.0.0.0:9947 \
+  --p2p-port 30306 \
+  --storage rocksdb \
+  --bootstrap-peers "/ip4/<GENESIS_IP>/tcp/30303/p2p/<GENESIS_PEER_ID>"
+```
+
+## Register with the OON
+
+After the node syncs, register it as a compute provider:
+
+```bash
+curl -X POST http://127.0.0.1:9947 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "method": "omne_oonRegisterNode",
+    "params": [{
+      "operator": "<OPERATOR_ADDRESS>",
+      "capabilities": ["wasm", "evm"],
+      "bond_ogt": 1000,
+      "max_concurrent_jobs": 4
+    }],
+    "id": 1
+  }'
+```
+
+### Registration parameters
+
+| Parameter | Description |
+|---|---|
+| `operator` | Operator account address |
+| `capabilities` | Supported runtimes: `wasm`, `evm` |
+| `bond_ogt` | OGT bond amount (minimum: 1,000) |
+| `max_concurrent_jobs` | Maximum parallel job slots |
+
+## Verify registration
+
+```bash
+curl -s http://127.0.0.1:9947 \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","method":"omne_oonNodeStatus","params":[],"id":1}' | jq
+```
+
+## Compute vs Validator
+
+| Aspect | Compute node | Validator |
+|---|---|---|
+| `--role` | `compute` | `validator` |
+| Consensus | ❌ Does not produce blocks | ✅ Produces blocks |
+| OON compute | ✅ Dedicated | ✅ Idle capacity only |
+| Staking required | Bond only (1,000 OGT) | Validator stake (15–28 OGT) + bond |
+| Best for | Dedicated offchain workloads | Block production + opportunistic compute |
+
+## Combining with other capabilities
+
+A compute node can also serve as an archive or storage node:
+
+```bash
+# Compute + Archive
+omne-node start \
+  --role compute \
+  --receipt-archive true \
+  ...
+
+# After startup, also register for OMP storage via RPC
+```
+
+## Use cases
+
+- **Dedicated OON workers** — run offchain compute jobs (WASM/EVM) without consensus overhead
+- **Horizontal scaling** — add compute capacity to the network without increasing validator count
+- **Specialised workloads** — nodes tuned for compute-heavy tasks (AI inference, data processing)

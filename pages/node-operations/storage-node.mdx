@@ -1,0 +1,79 @@
+# Storage Node
+
+A storage node participates in **OMP (Omne Media Protocol)** — storing and serving media assets for the network. Storage is an **orthogonal capability**, not a role — any node (full, validator, or compute) can register as a storage provider.
+
+## Start a node for storage duty
+
+Start a full node (or any role) and then register it as a storage provider via RPC:
+
+```bash
+omne-node start \
+  --data-dir ~/.omne/storage \
+  --network devnet \
+  --bind 0.0.0.0:9948 \
+  --p2p-port 30307 \
+  --storage rocksdb \
+  --bootstrap-peers "/ip4/<GENESIS_IP>/tcp/30303/p2p/<GENESIS_PEER_ID>"
+```
+
+## Register as OMP storage provider
+
+After the node syncs, register it:
+
+```bash
+curl -X POST http://127.0.0.1:9948 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "method": "omne_ompRegisterStorageNode",
+    "params": [{
+      "operator": "<OPERATOR_ADDRESS>",
+      "storage_capacity_gb": 500,
+      "bond_ogt": 500,
+      "supported_formats": ["image", "video", "document"]
+    }],
+    "id": 1
+  }'
+```
+
+### Registration parameters
+
+| Parameter | Description |
+|---|---|
+| `operator` | Operator account address |
+| `storage_capacity_gb` | Advertised storage capacity in GB |
+| `bond_ogt` | OGT bond amount (minimum: 500) |
+| `supported_formats` | Media types the node will serve |
+
+## Verify registration
+
+```bash
+curl -s http://127.0.0.1:9948 \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","method":"omne_ompStorageStatus","params":[],"id":1}' | jq
+```
+
+## Storage as a capability layer
+
+Storage is not a role — it's an add-on. This means:
+
+| Base role | + Storage | Result |
+|---|---|---|
+| Full node | ✅ | Relay chain + serve media assets |
+| Validator | ✅ | Produce blocks + serve media assets |
+| Compute | ✅ | OON compute + serve media assets |
+| Full + Archive | ✅ | Full history + serve media assets |
+
+## Bond requirements
+
+| Capability | Minimum bond |
+|---|---|
+| OMP Storage | 500 OGT |
+| OON Compute | 1,000 OGT |
+| Both | 1,500 OGT (separate bonds) |
+
+## Use cases
+
+- **Media hosting** — store and serve images, videos, and documents for dApps
+- **Content delivery** — distribute media assets across multiple storage nodes for availability
+- **Archival storage** — long-term retention of media referenced by on-chain transactions
