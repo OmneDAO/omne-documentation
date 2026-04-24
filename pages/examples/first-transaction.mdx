@@ -1,0 +1,81 @@
+# Example — First Transaction
+
+Generate a wallet, fund it, send a transfer, verify on the explorer.
+
+## Full snippet
+
+```typescript
+import { Wallet, OmneClient, createClient } from '@omne/sdk'
+
+async function main() {
+  // 1. Generate a wallet (back up the mnemonic in real usage)
+  const wallet = Wallet.generate()
+  const account = wallet.getAccount(0)
+  console.log('Generated address:', account.address)
+  console.log('Mnemonic (back this up):', wallet.getMnemonic())
+
+  // 2. Connect to the Ignis devnet
+  const client = new OmneClient('wss://rpc.ignis.omnechain.network')
+
+  // 3. Fund from the faucet (60-second cooldown per address)
+  // Uses the rpcCall escape hatch for methods not yet wrapped in typed client methods
+  const fundResult = await client.rpcCall('faucet_request', [account.address])
+  console.log('Faucet response:', fundResult)
+
+  // Wait ~3 seconds for the commerce block
+  await new Promise((resolve) => setTimeout(resolve, 3500))
+
+  // 4. Confirm the balance
+  const balance = await client.getBalance(account.address)
+  console.log(`Balance: ${balance.balanceOMC} OMC`)
+
+  // 5. Send a transfer (derive a second account as the recipient)
+  const recipient = wallet.getAccount(1)
+
+  const receipt = await client.transfer({
+    from: account.address,
+    to: recipient.address,
+    valueOMC: '1.0',
+    gasLimit: 21000,
+    gasPriceQuar: '1000',
+  })
+
+  console.log('Transaction ID:', receipt.transactionId)
+  console.log('Block height:', receipt.blockHeight)
+  console.log('Verify on explorer:', `https://omnescan.com/tx/${receipt.transactionId}`)
+}
+
+main().catch((err) => {
+  console.error('Example failed:', err)
+  process.exit(1)
+})
+```
+
+## Expected output
+
+```
+Generated address: omne1a3f7c9b2d...
+Mnemonic (back this up): abandon badge civil damage enforce fabric ghost ...
+Faucet response: { omcMinted: '10', ogtMinted: '5', status: 'funded' }
+Balance: 10.000000000000000000 OMC
+Transaction ID: txn_7b3c4d...
+Block height: 1234
+Verify on explorer: https://omnescan.com/tx/txn_7b3c4d...
+```
+
+## What this proves
+
+- Wallet generation works client-side, with BIP39 mnemonic + ed25519 derivation
+- The Ignis devnet faucet funds new accounts
+- Transactions land in ~3 seconds (commerce-layer finality)
+- The block explorer at `omnescan.com` resolves live transaction IDs
+
+## Gotchas
+
+- **Cooldown errors on the faucet**: the faucet rate-limits per address at 60 seconds. If you re-run the example on the same derived account within a minute, expect `cooldown_active`.
+- **Nonce races**: this example generates fresh addresses every run, so nonces start at 0. For persistent wallets, see the nonce-handling example in [Subscribe to Events](/examples/event-stream).
+- **Mnemonic safety**: do not commit mnemonics to repositories. The example logs it for visibility — in production, route through the encrypted IndexedDB pattern from [Key Storage](/architecture/key-storage).
+
+## Next step
+
+Extend this into a real application by deploying an [ORC-20 token](/examples/orc20-token) or [subscribing to events](/examples/event-stream).

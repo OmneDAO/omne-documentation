@@ -286,7 +286,7 @@ sudo ufw enable
 
 | Flag | Purpose | Default |
 |------|---------|---------|
-| `--data-dir` | RocksDB state, blocks, and receipts | `~/.omne-nexus` |
+| `--data-dir` | RocksDB state, blocks, and receipts | `~/.omne` |
 | `--network` | Network profile (`devnet`, `ignis`) | `devnet` |
 | `--bind` | RPC listen address (JSON-RPC 2.0) | `0.0.0.0:9944` |
 | `--p2p-port` | libp2p listen port | `30303` |
@@ -295,7 +295,6 @@ sudo ufw enable
 | `--bootstrap-peers` | Comma-separated multiaddrs | — |
 | `--revenue-smoothing-window` | Security blocks in smoothing window | `12` |
 | `--baseline-mode` | Revenue forecast baseline | `rolling-average` |
-| `--legacy-povc-compat` | Enable legacy PoVC payloads | enabled |
 | `--receipt-archive` | Store commerce receipts indefinitely | `false` |
 
 ## Log Verbosity

@@ -1,0 +1,87 @@
+# Example — Deploy an ORC-20 Token
+
+Deploy a fungible token, mint supply to the deployer, transfer to another account, and query balances.
+
+## Full snippet
+
+```typescript
+import { Wallet, OmneClient } from '@omne/sdk'
+
+async function main() {
+  // Generate + fund deployer (see first-transaction example for the faucet call)
+  const wallet = Wallet.generate()
+  const deployer = wallet.getAccount(0)
+  const holder = wallet.getAccount(1)
+
+  const client = new OmneClient('wss://rpc.ignis.omnechain.network')
+  await client.rpcCall('faucet_request', [deployer.address])
+  await new Promise((resolve) => setTimeout(resolve, 3500))
+
+  // Deploy the token
+  const { token, receipt } = await client.deployORC20Token({
+    name: 'Example Token',
+    symbol: 'EX',
+    totalSupply: '1000000',     // 1M tokens
+    decimals: 18,
+    from: deployer.address,
+    config: {
+      inheritsMicroscopicFees: true,
+      mintable: true,
+      burnable: false,
+    },
+  })
+
+  console.log('Token deployed at:', token.address)
+  console.log('Deploy block:', receipt.blockHeight)
+  console.log('Verify contract:', `https://omnescan.com/contract/${token.address}`)
+
+  // Query token metadata
+  const info = await client.getTokenInfo(token.address)
+  console.log('Metadata:', info)
+
+  // Transfer tokens to a second account
+  const transferReceipt = await client.tokenTransfer({
+    tokenAddress: token.address,
+    from: deployer.address,
+    to: holder.address,
+    amount: '1000',
+  })
+
+  console.log('Transfer tx:', transferReceipt.transactionId)
+
+  // Query holder balance
+  const holderBalance = await client.getTokenBalance(token.address, holder.address)
+  console.log(`Holder has: ${holderBalance} EX`)
+}
+
+main().catch((err) => {
+  console.error('Example failed:', err)
+  process.exit(1)
+})
+```
+
+## Expected output
+
+```
+Token deployed at: contract_5e8f1a...
+Deploy block: 1234
+Verify contract: https://omnescan.com/contract/contract_5e8f1a...
+Metadata: { name: 'Example Token', symbol: 'EX', totalSupply: '1000000', decimals: 18 }
+Transfer tx: txn_7b3c4d...
+Holder has: 1000 EX
+```
+
+## What this proves
+
+- ORC-20 deployment is one call (`deployORC20Token`)
+- Deployment includes the full contract lifecycle — bytecode, initial mint, metadata indexing
+- Token transfers settle in commerce-layer finality (~3 seconds)
+- Explorer resolves ORC-20 contract addresses and balances
+
+## Fee math
+
+Deployment typically costs ~0.001 OMC. Transfers cost ~0.000002 OMC. The faucet-granted 10 OMC is sufficient for thousands of deployments and transfers on devnet.
+
+## Next step
+
+Wire this into a WebSocket event stream so your app reacts to on-chain transfers: [Subscribe to Events](/examples/event-stream).

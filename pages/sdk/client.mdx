@@ -25,10 +25,16 @@ const client = new OmneClient({
 ```typescript
 import { createClient } from '@omne/sdk'
 
-const client = createClient('primum')       // local devnet
-const client = createClient('testum')       // testnet
-const client = createClient('principalis')  // mainnet
+const local   = createClient('primum')       // local dev role — ws://localhost:8545
+const testnet = createClient('testum')       // Testum testnet role (not yet live)
+const mainnet = createClient('principalis')  // Primum mainnet role (not yet live)
 ```
+
+import { Callout } from 'nextra/components'
+
+<Callout>
+  **SDK role keys vs. deployed-network codenames.** The factory's keys are **environment roles** in SDK code. The **deployed networks** use their own codenames: **Ignis** (devnet, live), **Testum** (testnet, forming), **Primum** (mainnet, upcoming). To connect to the live Ignis devnet, pass the URL to the constructor directly: `new OmneClient('wss://rpc.ignis.omnechain.network')`.
+</Callout>
 
 ## Connection lifecycle
 
@@ -105,6 +111,9 @@ Submit a pre-signed transaction.
 
 ```typescript
 const receipt = await client.sendTransaction(signed)
+
+// Verify on the explorer:
+// https://omnescan.com/tx/${receipt.transactionId}
 ```
 
 ### `getTransactionReceipt(txHash)`

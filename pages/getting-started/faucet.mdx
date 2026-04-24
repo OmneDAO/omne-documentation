@@ -1,0 +1,100 @@
+# Fund a Wallet from the Faucet
+
+The Ignis devnet faucet mints free testnet OMC and OGT to any valid `omne1...` address. No API keys. No sign-up. A 60-second cooldown per address to prevent abuse.
+
+import { Callout } from 'nextra/components'
+
+<Callout type="info">
+  Testnet tokens have no market value and cannot be transferred to mainnet. They exist only so you can exercise the SDK, deploy contracts, and stake a validator on the Ignis devnet.
+</Callout>
+
+## Option 1 — Web faucet
+
+Open the Phaylos wallet at [phaylos.xyz](https://phaylos.xyz), create or import a wallet, and use the in-app faucet panel. Or visit [omne.foundation](https://omne.foundation) (Phase 2) for the web faucet slide-out.
+
+## Option 2 — RPC call (cURL)
+
+Call the faucet directly via JSON-RPC:
+
+```bash
+curl -s -X POST https://rpc.ignis.omnechain.network \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","method":"faucet_request","params":["omne1_your_address_here"],"id":1}' | jq .
+```
+
+Expected response:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "result": {
+    "omcMinted": "10",
+    "ogtMinted": "5",
+    "status": "funded"
+  },
+  "id": 1
+}
+```
+
+The default grant is **10 OMC + 5 OGT** per request, subject to a **60-second cooldown** per address.
+
+## Option 3 — SDK `rpcCall` escape hatch
+
+From `@omne/sdk@1.1.0`, `OmneClient.rpcCall<T>(method, params?)` is a generic JSON-RPC escape hatch for methods not yet wrapped by a typed client method:
+
+```typescript
+import { Wallet, OmneClient } from '@omne/sdk'
+
+const wallet = Wallet.generate()
+const account = wallet.getAccount(0)
+
+const client = new OmneClient('wss://rpc.ignis.omnechain.network')
+
+const result = await client.rpcCall<{ omcMinted: string; ogtMinted: string; status: string }>(
+  'faucet_request',
+  [account.address],
+)
+console.log(result)
+// → { omcMinted: '10', ogtMinted: '5', status: 'funded' }
+```
+
+Prefer typed methods (`getBalance`, `transfer`, etc.) when they exist — they add parameter validation and response shaping. Use `rpcCall` for RPCs not yet wrapped, for custom node extensions, or for experimental devnet methods.
+
+## Verify the funding
+
+Check your balance with the SDK:
+
+```typescript
+const balance = await client.getBalance(account.address)
+console.log(`Balance: ${balance.balanceOMC} OMC`)
+// → "Balance: 10.000000000000000000 OMC"
+```
+
+Or query the RPC directly:
+
+```bash
+curl -s -X POST https://rpc.ignis.omnechain.network \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","method":"omne_getBalance","params":["omne1_your_address_here"],"id":2}' | jq .
+```
+
+## Cooldowns and limits
+
+- **60-second cooldown per address.** Requesting again within the window returns a cooldown error.
+- **Per-IP rate limit.** Abusive patterns are throttled at the RPC layer.
+- **No quota increases for devnet.** Testnet (Testum, forming) will have a separate faucet with its own policy.
+
+## Troubleshooting
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| `cooldown_active` error | You requested within 60s on the same address | Wait out the cooldown or use a fresh derived account |
+| `invalid_address` | Address does not match `omne1{40 hex}` format | Verify the address with `isValidOmneAddress()` from the SDK |
+| Faucet returns `funded` but balance is 0 | RPC has received the request but the block is not yet produced | Wait ~3 seconds for the next commerce block and re-check balance |
+| Connection refused | Ignis devnet not reachable from your network | Verify DNS resolves `rpc.ignis.omnechain.network` and port 443/WSS is open |
+
+## What's next?
+
+- Submit your [first transaction](/getting-started/first-transaction) — now that the account is funded
+- Deploy an [ORC-20 token](/sdk/contracts) with the SDK
+- Run a [local node](/node-operations) for offline development

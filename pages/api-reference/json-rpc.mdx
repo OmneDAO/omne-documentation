@@ -16,11 +16,13 @@ Returns the chain ID of the connected network.
 {"jsonrpc":"2.0","result":"0","id":1}
 ```
 
-| Network | Chain ID |
-|---|---|
-| primum (devnet) | 0 |
-| testum | 1 |
-| principalis | 42 |
+| SDK role | Deployed network | Chain ID |
+|---|---|---|
+| `primum` | Local dev (`ws://localhost:8545`; node binary defaults to `:9944`) | 0 |
+| `testum` | **Testum** testnet (not yet live) | 1 |
+| `principalis` | **Primum** mainnet (not yet live) | 42 |
+
+To connect to the live **Ignis devnet**, use the URL directly: `wss://rpc.ignis.omnechain.network`. Ignis is a deployed public network; it is not reachable via `createClient(role)` in `@omne/sdk@0.3.x`.
 
 ### `omne_networkInfo`
 

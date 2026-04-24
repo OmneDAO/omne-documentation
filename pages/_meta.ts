@@ -5,6 +5,7 @@ export default {
     "display": "hidden"
   },
   "getting-started": "Getting Started",
+  "examples": "Examples",
   "sdk": "SDK Reference",
   "node-operations": "Node Operations",
   "architecture": "Architecture",
