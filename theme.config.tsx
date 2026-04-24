@@ -7,9 +7,9 @@ const config: DocsThemeConfig = {
     </span>
   ),
   project: {
-    link: 'https://github.com/omnelabs',
+    link: 'https://github.com/OmneDAO',
   },
-  docsRepositoryBase: 'https://github.com/omnelabs/omne-docs/tree/master',
+  docsRepositoryBase: 'https://github.com/OmneDAO/omne-docs/tree/master',
   head: (
     <>
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />

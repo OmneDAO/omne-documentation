@@ -1,0 +1,36 @@
+# Examples
+
+Working end-to-end examples against the Ignis devnet. Each example is self-contained — copy, fund the wallet from the [faucet](/getting-started/faucet), and run.
+
+## The examples
+
+- **[First Transaction](/examples/first-transaction)** — generate a wallet, fund it, send an OMC transfer, verify on the explorer. The canonical smoke test.
+- **[Deploy an ORC-20 Token](/examples/orc20-token)** — deploy a fungible token, mint to an account, transfer, query balance.
+- **[Subscribe to Events](/examples/event-stream)** — open a WebSocket, stream new blocks, react to contract events.
+- **[Subscription Contract](/examples/subscription-contract)** — the 779-byte WASM subscription engine from the [foundation blog post](https://omne.foundation/blog/first-contract-on-omne). Deploy it, call `subscribe`, check `is_active`.
+
+## Running the examples
+
+Every example assumes:
+
+```bash
+npm install @omne/sdk
+```
+
+And uses the Ignis devnet RPC:
+
+```typescript
+const client = new OmneClient('wss://rpc.ignis.omnechain.network')
+```
+
+Fund the account you're running as from the faucet before executing state-mutating examples. See [Fund from Faucet](/getting-started/faucet).
+
+## Verify on the explorer
+
+Every example ends with a verification step against [omnescan.com](https://omnescan.com). Transaction IDs, contract addresses, and account balances are all observable there.
+
+## Source-of-truth note
+
+These snippets target `@omne/sdk@0.3.x`. If you are on a newer SDK major version, method signatures may have shifted — check the [SDK reference](/sdk) and the [CHANGELOG](https://github.com/OmneDAO/omne-blockchain/blob/main/sdk/typescript/CHANGELOG.md).
+
+Examples are intentionally short. For larger starter repositories (Next.js, Express, Python ports), see the [Omne GitHub organization](https://github.com/OmneDAO).

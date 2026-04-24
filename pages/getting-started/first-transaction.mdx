@@ -4,23 +4,27 @@ This guide walks through submitting a signed OMC transfer to the Omne blockchain
 
 ## Prerequisites
 
-- SDK installed (`@omne/sdk`)
-- A wallet with a funded account (use the faucet on devnet)
-- Access to an RPC endpoint
+- SDK installed (`@omne/sdk`) — see [Installation](/getting-started/installation)
+- A wallet with a funded account — see [Fund from Faucet](/getting-started/faucet)
+- Access to an RPC endpoint (Ignis devnet: `wss://rpc.ignis.omnechain.network`)
 
 ## Connect to the network
 
 ```typescript
-import { Wallet, OmneClient } from '@omne/sdk'
+import { Wallet, OmneClient, createClient } from '@omne/sdk'
 
-// Connect to Ignis alpha network
-const client = new OmneClient('https://ignis.omne.network/rpc')
+// Connect directly to the live Ignis devnet by URL
+const client = new OmneClient('wss://rpc.ignis.omnechain.network')
 
-// Or use a named network
-import { createClient } from '@omne/sdk'
-const client = createClient('ignis')   // alpha devnet
-// const client = createClient('primum')  // mainnet (future)
+// Or, if running a local node:
+const local = createClient('primum')       // ws://localhost:8545 — local dev role
+// const testnet = createClient('testum')    // Testum testnet (not yet live)
+// const mainnet = createClient('principalis') // Primum mainnet (not yet live)
 ```
+
+<Callout>
+  **Naming note:** The SDK's `createClient(role)` factory uses **environment-role keys** — `primum` (local dev), `testum` (testnet), `principalis` (mainnet). These are distinct from the **deployed-network codenames** — **Ignis** (devnet, live), **Testum** (testnet, forming), **Primum** (mainnet, upcoming). To connect to the live **Ignis** devnet, construct the client directly with its RPC URL as shown above.
+</Callout>
 
 ## Check your balance
 
@@ -150,8 +154,23 @@ try {
 }
 ```
 
+## Verify on the block explorer
+
+After the transaction lands, verify it on the Omne block explorer:
+
+```
+https://omnescan.com/tx/<transactionId>
+```
+
+Or check the account balance changed:
+
+```
+https://omnescan.com/address/<your-address>
+```
+
 ## What's next?
 
 - Deploy an [ORC-20 token](/sdk/client#orc-20-tokens)
 - Run your own [node](/node-operations)
 - Explore the full [JSON-RPC API](/api-reference/json-rpc)
+- Browse working [example snippets](/examples)

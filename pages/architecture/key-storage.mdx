@@ -1,6 +1,6 @@
 # Key Storage Pattern
 
-This document describes the canonical key storage pattern used across all OmneDAO products (ARC wallet, foundation site, and any future frontends). The pattern provides **XSS-resilient mnemonic storage** using IndexedDB and the Web Crypto API.
+This document describes the canonical key storage pattern used across all OmneDAO products (Phaylos wallet, foundation site, and any future frontends). The pattern provides **XSS-resilient mnemonic storage** using IndexedDB and the Web Crypto API.
 
 ## Architecture
 
@@ -10,7 +10,7 @@ This document describes the canonical key storage pattern used across all OmneDA
 │                                            │
 │  ┌────────────────────────────────────┐    │
 │  │          Application               │    │
-│  │  (ARC, Foundation, dApps)          │    │
+│  │  (Phaylos, Foundation, dApps)          │    │
 │  └──────────┬─────────────────────────┘    │
 │             │                              │
 │  ┌──────────▼─────────────────────────┐    │
@@ -138,7 +138,7 @@ useEffect(() => {
 
 ## Consistency across products
 
-All OmneDAO-provided products (ARC wallet, foundation site, explorer, future frontends) use this identical pattern. This ensures:
+All OmneDAO-provided products (Phaylos wallet, foundation site, explorer, future frontends) use this identical pattern. This ensures:
 
 - Users can export a mnemonic from one product and import it in another
 - Security posture is uniform across the ecosystem

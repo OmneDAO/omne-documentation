@@ -1,0 +1,122 @@
+# Example — Subscription Contract
+
+Deploy the 779-byte WASM subscription engine described in the [foundation blog post](https://omne.foundation/blog/first-contract-on-omne). Three functions: `subscribe`, `is_active`, `get_expiry`. On-chain subscription state without a payment intermediary.
+
+## What the contract does
+
+```
+subscribe(address, plan_id, start_timestamp) → activates a subscription
+is_active(address)                           → bool, is the subscription current?
+get_expiry(address)                          → timestamp, when does it expire?
+```
+
+Total compiled size: **779 bytes of WASM** (smaller than a typical favicon). Deployment cost: approximately 0.001 OMC.
+
+## The deployed reference contract
+
+A reference instance lives on the Ignis devnet at:
+
+```
+contract_5e4b50f74b94f16cf857f69c8703f063ba712249
+```
+
+WASM SHA-256 hash:
+
+```
+17578a1010bcd948ec1855d461ce9597a6d910115d3f296016b0801d41bb2108
+```
+
+Verify on the explorer: [omnescan.com/contract/contract_5e4b50f74b94f16cf857f69c8703f063ba712249](https://omnescan.com/contract/contract_5e4b50f74b94f16cf857f69c8703f063ba712249)
+
+## Call the reference contract
+
+```typescript
+import { Wallet, OmneClient } from '@omne/sdk'
+
+async function main() {
+  const wallet = Wallet.generate()
+  const account = wallet.getAccount(0)
+
+  const client = new OmneClient('wss://rpc.ignis.omnechain.network')
+  await client.rpcCall('faucet_request', [account.address])
+  await new Promise((resolve) => setTimeout(resolve, 3500))
+
+  const CONTRACT = 'contract_5e4b50f74b94f16cf857f69c8703f063ba712249'
+
+  // Activate a subscription for this account
+  const activation = await client.contractCall({
+    contractAddress: CONTRACT,
+    method: 'subscribe',
+    args: [account.address, 'plan_premium', Math.floor(Date.now() / 1000)],
+    from: account.address,
+  })
+  console.log('subscribe() tx:', activation.transactionId)
+
+  // Wait for the commerce block
+  await new Promise((resolve) => setTimeout(resolve, 3500))
+
+  // Check it's active
+  const isActive = await client.contractCall({
+    contractAddress: CONTRACT,
+    method: 'is_active',
+    args: [account.address],
+    from: account.address,
+  })
+  console.log('is_active():', isActive.result)
+
+  // Check expiry
+  const expiry = await client.contractCall({
+    contractAddress: CONTRACT,
+    method: 'get_expiry',
+    args: [account.address],
+    from: account.address,
+  })
+  console.log('get_expiry():', new Date(Number(expiry.result) * 1000).toISOString())
+}
+
+main().catch(console.error)
+```
+
+## Deploy your own
+
+The contract source is Rust compiled to WASM. The binary hash lets you verify any deployed copy against a known build.
+
+Build and deploy the contract:
+
+```typescript
+import fs from 'node:fs'
+import { OmneClient, Wallet } from '@omne/sdk'
+
+const wasm = fs.readFileSync('./subscription.wasm')
+const wallet = Wallet.fromMnemonic(process.env.MNEMONIC!)
+const deployer = wallet.getAccount(0)
+
+const client = new OmneClient('wss://rpc.ignis.omnechain.network')
+
+const result = await client.deployContract({
+  bytecode: wasm,
+  constructorArgs: [],
+  from: deployer.address,
+  gasLimit: 500000,
+})
+
+console.log('Your subscription contract:', result.contractAddress)
+console.log('Verify:', `https://omnescan.com/contract/${result.contractAddress}`)
+```
+
+## Why put subscriptions on-chain?
+
+From the [foundation post](https://omne.foundation/blog/first-contract-on-omne):
+
+| Provider | Cost per subscription |
+|---|---|
+| Stripe Billing | 0.5–0.8% of revenue + 2.9% + $0.30 processing |
+| Chargebee | $0.10 per subscription per month minimum |
+| RevenueCat | 1–2.5% of tracked revenue |
+| **On-chain (Omne)** | **~0.000002 OMC per transition** |
+
+For high-volume low-ticket subscriptions ($0.50–$5/month), the intermediary fee stack is the business model. On-chain state on Omne removes that stack from the critical path — at the cost of writing your own subscription logic.
+
+## Next step
+
+Wire the contract into a UI with the [event subscription example](/examples/event-stream) to show live activation status.

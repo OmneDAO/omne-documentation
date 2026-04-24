@@ -1,0 +1,76 @@
+# Example — Subscribe to Events
+
+Open a WebSocket, stream new blocks, react to each one.
+
+## Full snippet
+
+```typescript
+import { OmneClient } from '@omne/sdk'
+
+async function main() {
+  // WebSocket connection — required for subscriptions
+  const client = new OmneClient('wss://rpc.ignis.omnechain.network')
+  await client.connect()
+
+  // Subscribe to new blocks
+  const sub = await client.subscribe('newBlock', (block) => {
+    console.log(
+      `[${block.layer}] Block #${block.number} · ${block.transactions.length} txs · ${new Date(block.timestamp * 1000).toISOString()}`,
+    )
+  })
+
+  console.log('Subscription active. Ignis produces a commerce block every ~3 seconds.')
+  console.log('Ctrl-C to exit.')
+
+  // Run for 30 seconds then unsubscribe
+  await new Promise((resolve) => setTimeout(resolve, 30000))
+  await client.unsubscribe(sub.id)
+  await client.disconnect()
+}
+
+main().catch((err) => {
+  console.error('Example failed:', err)
+  process.exit(1)
+})
+```
+
+## Expected output
+
+```
+Subscription active. Ignis produces a commerce block every ~3 seconds.
+Ctrl-C to exit.
+[commerce] Block #45213 · 0 txs · 2026-04-22T15:04:21.000Z
+[commerce] Block #45214 · 2 txs · 2026-04-22T15:04:24.000Z
+[commerce] Block #45215 · 0 txs · 2026-04-22T15:04:27.000Z
+[security] Block #251 · 0 txs · 2026-04-22T15:04:30.000Z
+[commerce] Block #45216 · 1 txs · 2026-04-22T15:04:30.000Z
+```
+
+## Interleaved layers
+
+Every ~180 commerce blocks you will see a `[security]` block interleaved — that is the 9-minute security-layer cadence aggregating the prior commerce window.
+
+## Other subscribable events
+
+| Event | Payload |
+|---|---|
+| `newBlock` | `{ number, layer, hash, timestamp, transactions[] }` |
+| `newTransaction` | Transaction submitted to mempool |
+| `contractEvent` | Events emitted by a specific contract address |
+| `validatorUpdate` | Validator set changes (entries, exits, slashing) |
+
+Filter on the subscribe call for specific contract events:
+
+```typescript
+const sub = await client.subscribe('contractEvent', (event) => {
+  console.log('Event:', event.eventName, event.args)
+}, { contractAddress: 'contract_5e8f1a...' })
+```
+
+## WebSocket vs HTTP
+
+Subscriptions require `wss://` transport. HTTP-transport clients can poll `getBlock('latest')` but cannot receive push notifications.
+
+## Next step
+
+Combine the subscription pattern with the ORC-20 example: [deploy a token](/examples/orc20-token), then subscribe to its `Transfer` events to build a live-updating UI.
