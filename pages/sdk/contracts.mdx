@@ -52,7 +52,7 @@ console.log(`Balance: ${balance} BXT`)
 const receipt = await client.tokenTransfer({
   tokenAddress: token.address,
   from: account.address,
-  to: 'omne1recipient...',
+  to: 'om1zrecipient...',
   amount: '1000',
 })
 ```
@@ -96,7 +96,7 @@ console.log('Tx:', result.transactionId)          // "txn_..."
 const result = await client.contractCall({
   contractAddress: 'contract_...',
   method: 'balanceOf',
-  args: ['omne1holder...'],
+  args: ['om1zholder...'],
   from: account.address,
 })
 ```
@@ -107,7 +107,7 @@ const result = await client.contractCall({
 import { encodeContractCall, AbiEncode } from '@omne/sdk'
 
 const encoded = encodeContractCall('transfer', [
-  { type: 'address', value: 'omne1recipient...' },
+  { type: 'address', value: 'om1zrecipient...' },
   { type: 'uint256', value: '1000000000000000000' },
 ])
 ```
@@ -152,8 +152,8 @@ All on-chain identifiers use canonical prefixes:
 
 | Type | Format | Example |
 |---|---|---|
-| Wallet address | `omne1{40 hex}` | `omne1a3f7c9b2d...` |
-| Contract address | `contract_{40 hex}` | `contract_5e8f1a...` |
-| Transaction ID | `txn_{64 hex}` | `txn_7b3c4d...` |
+| Wallet address | `om1z…` (bech32m, 32-byte payload) | `om1za3f7c9b2d...` |
+| Contract address | `contract_` + 40 hex | `contract_5e8f1a...` |
+| Transaction ID | `txn_` + hex | `txn_7b3c4d...` |
 
 The SDK validates these formats automatically and rejects malformed identifiers.

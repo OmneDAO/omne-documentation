@@ -68,9 +68,9 @@ const registry = await client.getServiceRegistry()
 ### `getBalance(address)`
 
 ```typescript
-const balance = await client.getBalance('omne1...')
+const balance = await client.getBalance('om1z...')
 
-balance.address      // "omne1..."
+balance.address      // "om1z..."
 balance.balance      // raw string
 balance.balanceQuar  // u128 as string
 balance.balanceOMC   // human-readable decimal
@@ -82,7 +82,7 @@ balance.lastUpdated  // timestamp
 Returns the account nonce — use this for transaction sequencing.
 
 ```typescript
-const nonce = await client.getTransactionCount('omne1...')
+const nonce = await client.getTransactionCount('om1z...')
 ```
 
 ---
@@ -95,8 +95,8 @@ High-level transfer that constructs, signs, and submits in one call.
 
 ```typescript
 const receipt = await client.transfer({
-  from: 'omne1sender...',
-  to: 'omne1recipient...',
+  from: 'om1zsender...',
+  to: 'om1zrecipient...',
   valueOMC: '1.5',
   gasLimit: 21000,           // optional, default 21000
   gasPriceQuar: '1000',     // optional, default '1000'
@@ -155,8 +155,8 @@ latest.transactions  // transaction hashes in this block
 
 ```typescript
 const gas = await client.estimateGas({
-  from: 'omne1...',
-  to: 'omne1...',
+  from: 'om1z...',
+  to: 'om1z...',
   value: '1000000000000000000',
 })
 // → 21000
@@ -203,7 +203,7 @@ const info = await client.getTokenInfo('contract_...')
 ### `getTokenBalance(tokenAddress, holderAddress)`
 
 ```typescript
-const balance = await client.getTokenBalance('contract_...', 'omne1...')
+const balance = await client.getTokenBalance('contract_...', 'om1z...')
 ```
 
 ### `tokenTransfer(params)`
@@ -211,8 +211,8 @@ const balance = await client.getTokenBalance('contract_...', 'omne1...')
 ```typescript
 await client.tokenTransfer({
   tokenAddress: 'contract_...',
-  from: 'omne1sender...',
-  to: 'omne1recipient...',
+  from: 'om1zsender...',
+  to: 'om1zrecipient...',
   amount: '100',
 })
 ```
@@ -241,8 +241,8 @@ Call a contract method.
 const result = await client.contractCall({
   contractAddress: 'contract_...',
   method: 'balanceOf',
-  args: ['omne1holder...'],
-  from: 'omne1caller...',
+  args: ['om1zholder...'],
+  from: 'om1zcaller...',
 })
 ```
 
@@ -282,13 +282,13 @@ const stakeInfo = await client.getDynamicStakeInfo()
 ### `getValidatorPerformance(address)`
 
 ```typescript
-const perf = await client.getValidatorPerformance('omne1validator...')
+const perf = await client.getValidatorPerformance('om1zvalidator...')
 ```
 
 ### `calculateValidatorRewards(address, baseReward?)`
 
 ```typescript
-const rewards = await client.calculateValidatorRewards('omne1validator...')
+const rewards = await client.calculateValidatorRewards('om1zvalidator...')
 
 rewards.baseReward        // string
 rewards.performanceBonus  // string

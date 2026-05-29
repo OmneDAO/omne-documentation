@@ -13,12 +13,14 @@ Omne's economic model prioritises **accessibility over revenue**. Fees exist to 
 
 ## Denomination
 
-| Unit | Value |
-|---|---|
-| 1 OMC | 10¹⁸ Quar |
-| 1 Quar | Smallest unit (like wei in Ethereum) |
+Omne has two native tokens with **different decimal precision** — do not assume they match.
 
-Gas price is denominated in Quar. The default gas price is `1000` Quar.
+| Token | Base unit | Decimals | Relationship |
+|---|---|---|---|
+| **OMC** (commerce / gas) | Quar | 18 | 1 OMC = 10¹⁸ Quar (Quar is the smallest unit, like wei in Ethereum) |
+| **OGT** (governance / staking) | gluu | 6 | 1 OGT = 10⁶ gluu |
+
+Gas price is denominated in Quar. The default gas price is `1000` Quar. OGT amounts (staking, rewards) are denominated in gluu.
 
 ```typescript
 import { toQuar, fromQuar, formatBalance } from '@omne/sdk'
@@ -82,7 +84,7 @@ Validators earn rewards from:
 - **Longevity bonuses** — for sustained participation in consensus
 
 ```typescript
-const rewards = await client.calculateValidatorRewards('omne1validator...')
+const rewards = await client.calculateValidatorRewards('om1zvalidator...')
 
 rewards.baseReward        // base fee share
 rewards.performanceBonus  // uptime bonus

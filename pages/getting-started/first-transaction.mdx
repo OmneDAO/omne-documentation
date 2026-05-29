@@ -50,7 +50,7 @@ The `transfer` method constructs, signs, and submits a transaction in one call:
 ```typescript
 const receipt = await client.transfer({
   from: account.address,
-  to: 'omne1recipient...',
+  to: 'om1zrecipient...',
   valueOMC: '1.5',         // 1.5 OMC
   gasLimit: 21000,          // default for simple transfer
   gasPriceQuar: '1000',    // microscopic fee
@@ -72,7 +72,7 @@ const nonce = await client.getTransactionCount(account.address)
 // Estimate gas
 const gasEstimate = await client.estimateGas({
   from: account.address,
-  to: 'omne1recipient...',
+  to: 'om1zrecipient...',
   value: '1500000000000000000', // 1.5 OMC in Quar
 })
 
@@ -81,7 +81,7 @@ import { toQuar } from '@omne/sdk'
 
 const tx = {
   from: account.address,
-  to: 'omne1recipient...',
+  to: 'om1zrecipient...',
   value: toQuar('1.5'),     // Convert OMC → Quar string
   gasLimit: gasEstimate,
   gasPrice: '1000',
@@ -110,7 +110,7 @@ if (receipt.status === 'success') {
 ```typescript
 const fees = await client.estimateFees({
   from: account.address,
-  to: 'omne1recipient...',
+  to: 'om1zrecipient...',
   value: toQuar('10'),
 })
 
@@ -132,7 +132,7 @@ Omne's dual-layer consensus processes transactions at different cadences:
 ```typescript
 await client.transfer({
   from: account.address,
-  to: 'omne1recipient...',
+  to: 'om1zrecipient...',
   valueOMC: '1.0',
   priority: 'commerce', // Fast finality
 })
