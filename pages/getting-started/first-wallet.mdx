@@ -1,6 +1,6 @@
 # Create a Wallet
 
-The Omne SDK uses **BIP39 mnemonics** with **SLIP-0010 ed25519 HD derivation**. Every wallet starts with a 12-word mnemonic phrase that deterministically generates an unlimited number of accounts.
+The Omne SDK uses **BIP39 mnemonics** with hierarchical deterministic derivation of **ML-DSA-44 (FIPS 204)** post-quantum keys. Every wallet starts with a 12-word mnemonic phrase that deterministically generates an unlimited number of accounts.
 
 ## Generate a new wallet
 
@@ -18,10 +18,10 @@ console.log('Mnemonic:', wallet.getMnemonic())
 const account = wallet.getAccount(0)
 
 console.log('Address:', account.address)
-// → "omne1a3f7c..."
+// → "om1za3f7c..."
 
 console.log('Public Key:', account.publicKey)
-// → "d4e5f6..." (64 hex chars, 32 bytes)
+// → "d4e5f6..." (2,624 hex chars — 1,312-byte ML-DSA-44 public key)
 ```
 
 import { Callout } from 'nextra/components'
@@ -49,11 +49,11 @@ accounts.forEach((acct, i) => {
 })
 ```
 
-Derivation path: `m/44'/60'/0'/0/{index}` (all hardened, per SLIP-0010).
+Derivation path: `m/44'/60'/0'/0/{index}` (hardened-only HMAC-SHA512 KDF; each leaf yields a 32-byte ML-DSA-44 seed).
 
 ## Import a private key
 
-If you already have a raw ed25519 private key (32 bytes, hex-encoded):
+If you already have a raw 32-byte ML-DSA-44 seed (64 hex chars):
 
 ```typescript
 import { Wallet } from '@omne/sdk'
@@ -66,17 +66,19 @@ This creates a standalone `WalletAccount` — no mnemonic, no HD derivation.
 
 ## Address format
 
-Omne addresses follow a deterministic derivation:
+Omne addresses are encoded as `om1z…` (bech32m, HRP `om`, witness version 2). They are derived from the ML-DSA-44 public key:
 
-1. Compute the ed25519 public key from the private key
-2. Hash with SHA-256 using domain separation: `SHA256("OMNE_ADDRESS_V1" || pubkey)`
-3. Take the first 20 bytes
-4. Encode as `omne1{hex}`
+1. Expand the 32-byte seed into the ML-DSA-44 public key (1,312 bytes)
+2. Hash with SHA-256 using domain separation: `SHA256("OMNE_PQC_ADDRESS_V1" || ml_dsa_44_pubkey)`
+3. Use the full 32-byte digest (no truncation)
+4. Encode the result as bech32m → `om1z…`
+
+> This is the canonical post-quantum address scheme (`OMNE_PQC_ADDRESS_V1`) and matches the node's `PqcAccountAddress::from_public_key`. Omne has no Ed25519 fallback — the entire wallet, signing, and address path is ML-DSA-44.
 
 ```typescript
 import { isValidOmneAddress } from '@omne/sdk'
 
-isValidOmneAddress('omne1a3f7c9b2d...')  // true
+isValidOmneAddress('om1za3f7c9b2d...')  // true
 isValidOmneAddress('0x123...')            // false
 ```
 
@@ -85,7 +87,7 @@ isValidOmneAddress('0x123...')            // false
 ```typescript
 const account = wallet.getAccount(0)
 const signature = account.signMessage('Hello, Omne!')
-// Returns ed25519 signature (64 bytes) + public key (32 bytes), hex-encoded
+// Returns ML-DSA-44 signature (2,420 bytes) + public key (1,312 bytes), hex-encoded
 ```
 
 ## Encrypted keystore export
@@ -95,7 +97,7 @@ Export an account to an encrypted JSON keystore (PBKDF2 + AES-256-GCM):
 ```typescript
 const keystore = await account.toKeystore('my-strong-password')
 console.log(JSON.stringify(keystore))
-// → { version: 3, crypto: { ... }, address: "omne1..." }
+// → { version: 3, crypto: { ... }, address: "om1z..." }
 
 // Later, restore from keystore
 const restored = await WalletAccount.fromKeystore(keystore, 'my-strong-password')

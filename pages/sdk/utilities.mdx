@@ -6,12 +6,12 @@ The SDK exports a comprehensive set of utility functions for address handling, b
 
 ### `isValidOmneAddress(address)`
 
-Check if a string is a valid `omne1...` address.
+Check if a string is a valid `om1z...` address.
 
 ```typescript
 import { isValidOmneAddress } from '@omne/sdk'
 
-isValidOmneAddress('omne1a3f7c9b2d...')  // true
+isValidOmneAddress('om1za3f7c9b2d...')  // true
 isValidOmneAddress('0x123...')            // false
 isValidOmneAddress('')                    // false
 ```
@@ -28,12 +28,12 @@ isValidHexAddress('0xa3f7c9b2d...')  // true
 
 ### `normalizeAddress(address)`
 
-Normalize an address to its canonical `omne1...` form.
+Normalize an address to its canonical `om1z...` form.
 
 ```typescript
 import { normalizeAddress } from '@omne/sdk'
 
-normalizeAddress('0xa3f7c9b2d...')  // "omne1a3f7c9b2d..."
+normalizeAddress('0xa3f7c9b2d...')  // "om1za3f7c9b2d..."
 ```
 
 ### `toOmneAddress(hexAddress)` / `fromOmneAddress(omneAddress)`
@@ -43,8 +43,8 @@ Convert between hex and Omne address formats.
 ```typescript
 import { toOmneAddress, fromOmneAddress } from '@omne/sdk'
 
-toOmneAddress('a3f7c9b2d...')           // "omne1a3f7c9b2d..."
-fromOmneAddress('omne1a3f7c9b2d...')    // "a3f7c9b2d..."
+toOmneAddress('a3f7c9b2d...')           // "om1za3f7c9b2d..."
+fromOmneAddress('om1za3f7c9b2d...')    // "a3f7c9b2d..."
 ```
 
 ### `parseAddress(address)`
@@ -54,8 +54,8 @@ Parse any address format and return a structured result.
 ```typescript
 import { parseAddress } from '@omne/sdk'
 
-const parsed = parseAddress('omne1a3f7c9b2d...')
-// { hex: "a3f7c9b2d...", omne: "omne1a3f7c9b2d...", valid: true }
+const parsed = parseAddress('om1za3f7c9b2d...')
+// { hex: "a3f7c9b2d...", omne: "om1za3f7c9b2d...", valid: true }
 ```
 
 ---
@@ -117,8 +117,8 @@ Client-side gas estimation.
 import { estimateGas } from '@omne/sdk'
 
 const gas = estimateGas({
-  from: 'omne1...',
-  to: 'omne1...',
+  from: 'om1z...',
+  to: 'om1z...',
   value: '1000000000000000000',
 })
 ```
@@ -127,24 +127,35 @@ const gas = estimateGas({
 
 ## Cryptographic utilities
 
-### `verifyEd25519Signature(message, signature, publicKey)`
+### `verifyMlDsa44Signature(message, signatureHex, publicKeyHex, expectedAddress)`
 
-Verify an ed25519 signature.
+Verify an **ML-DSA-44 (FIPS 204)** signature. The message is SHA-256-hashed before verification (matching the signer), the 2,420-byte signature is checked against the 1,312-byte public key, and the public key is confirmed to derive the `expectedAddress` (`om1z…`). Returns `boolean`.
 
 ```typescript
-import { verifyEd25519Signature } from '@omne/sdk'
+import { verifyMlDsa44Signature } from '@omne/sdk'
 
-const valid = verifyEd25519Signature(messageBytes, signatureBytes, pubkeyBytes)
+const valid = verifyMlDsa44Signature('Hello', signatureHex, publicKeyHex, 'om1z...')
 ```
 
-### `verifyMessageSignature(message, signatureHex, publicKeyHex)`
+### `verifyMessageSignature(message, signature, expectedAddress)`
 
-Verify a signed message (string-based API).
+Verify a message signed with `WalletAccount.signMessage` — the envelope is the 2,420-byte signature followed by the 1,312-byte public key (3,732 bytes total). Returns `boolean`.
 
 ```typescript
 import { verifyMessageSignature } from '@omne/sdk'
 
-const valid = verifyMessageSignature('Hello', signatureHex, pubkeyHex)
+const signed = account.signMessage('Hello')
+const valid = verifyMessageSignature('Hello', signed, account.address)
+```
+
+### `deriveAddressFromPublicKey(publicKey)`
+
+Derive the canonical `om1z…` address from a raw ML-DSA-44 public key (`Uint8Array`): `SHA256("OMNE_PQC_ADDRESS_V1" || pubkey)`, full 32 bytes, bech32m-encoded. Matches the node's `PqcAccountAddress::from_public_key`.
+
+```typescript
+import { deriveAddressFromPublicKey } from '@omne/sdk'
+
+const address = deriveAddressFromPublicKey(pubkeyBytes) // "om1z..."
 ```
 
 ---
@@ -191,7 +202,7 @@ Retry an async function with exponential backoff.
 import { retry } from '@omne/sdk'
 
 const result = await retry(
-  () => client.getBalance('omne1...'),
+  () => client.getBalance('om1z...'),
   { maxRetries: 3, baseDelay: 1000 }
 )
 ```

@@ -54,7 +54,7 @@ main().catch((err) => {
 ## Expected output
 
 ```
-Generated address: omne1a3f7c9b2d...
+Generated address: om1za3f7c9b2d...
 Mnemonic (back this up): abandon badge civil damage enforce fabric ghost ...
 Faucet response: { omcMinted: '10', ogtMinted: '5', status: 'funded' }
 Balance: 10.000000000000000000 OMC
@@ -65,7 +65,7 @@ Verify on explorer: https://omnescan.com/tx/txn_7b3c4d...
 
 ## What this proves
 
-- Wallet generation works client-side, with BIP39 mnemonic + ed25519 derivation
+- Wallet generation works client-side, with BIP39 mnemonic + ML-DSA-44 derivation
 - The Ignis devnet faucet funds new accounts
 - Transactions land in ~3 seconds (commerce-layer finality)
 - The block explorer at `omnescan.com` resolves live transaction IDs
