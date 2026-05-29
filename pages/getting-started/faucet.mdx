@@ -1,6 +1,6 @@
 # Fund a Wallet from the Faucet
 
-The Ignis devnet faucet mints free testnet OMC and OGT to any valid `omne1...` address. No API keys. No sign-up. A 60-second cooldown per address to prevent abuse.
+The Ignis devnet faucet mints free testnet OMC and OGT to any valid `om1z...` address. No API keys. No sign-up. A 60-second cooldown per address to prevent abuse.
 
 import { Callout } from 'nextra/components'
 
@@ -19,7 +19,7 @@ Call the faucet directly via JSON-RPC:
 ```bash
 curl -s -X POST https://rpc.ignis.omnechain.network \
   -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","method":"faucet_request","params":["omne1_your_address_here"],"id":1}' | jq .
+  -d '{"jsonrpc":"2.0","method":"faucet_request","params":["om1z_your_address_here"],"id":1}' | jq .
 ```
 
 Expected response:
@@ -75,7 +75,7 @@ Or query the RPC directly:
 ```bash
 curl -s -X POST https://rpc.ignis.omnechain.network \
   -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","method":"omne_getBalance","params":["omne1_your_address_here"],"id":2}' | jq .
+  -d '{"jsonrpc":"2.0","method":"omne_getBalance","params":["om1z_your_address_here"],"id":2}' | jq .
 ```
 
 ## Cooldowns and limits
@@ -89,7 +89,7 @@ curl -s -X POST https://rpc.ignis.omnechain.network \
 | Symptom | Cause | Fix |
 |---|---|---|
 | `cooldown_active` error | You requested within 60s on the same address | Wait out the cooldown or use a fresh derived account |
-| `invalid_address` | Address does not match `omne1{40 hex}` format | Verify the address with `isValidOmneAddress()` from the SDK |
+| `invalid_address` | Address is not a valid `om1z…` (bech32m) address | Verify the address with `isValidOmneAddress()` from the SDK |
 | Faucet returns `funded` but balance is 0 | RPC has received the request but the block is not yet produced | Wait ~3 seconds for the next commerce block and re-check balance |
 | Connection refused | Ignis devnet not reachable from your network | Verify DNS resolves `rpc.ignis.omnechain.network` and port 443/WSS is open |
 

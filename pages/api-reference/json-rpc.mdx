@@ -12,17 +12,25 @@ Returns the chain ID of the connected network.
 // Request
 {"jsonrpc":"2.0","method":"omne_chainId","params":[],"id":1}
 
-// Response
-{"jsonrpc":"2.0","result":"0","id":1}
+// Response (connected to Ignis)
+{"jsonrpc":"2.0","result":3,"id":1}
 ```
 
-| SDK role | Deployed network | Chain ID |
+The live **Ignis devnet** reports `chain_id` **3** (a node's `chain_id` equals its configured `network_id`). To connect to Ignis, use the URL directly:
+
+```
+wss://rpc.ignis.omnechain.network
+```
+
+Ignis is not reachable via `createClient(role)` in `@omne/sdk@1.1.x` — the SDK's role keys are **client presets** for other environments, a separate axis from the chain ID a live network reports:
+
+| SDK role preset | Intended environment | Preset chain ID |
 |---|---|---|
-| `primum` | Local dev (`ws://localhost:8545`; node binary defaults to `:9944`) | 0 |
+| `primum` | Local development | 0 |
 | `testum` | **Testum** testnet (not yet live) | 1 |
 | `principalis` | **Primum** mainnet (not yet live) | 42 |
 
-To connect to the live **Ignis devnet**, use the URL directly: `wss://rpc.ignis.omnechain.network`. Ignis is a deployed public network; it is not reachable via `createClient(role)` in `@omne/sdk@0.3.x`.
+These preset values are SDK client configuration; they do not correspond to the `network_id` of any currently deployed network. When connected to Ignis, `omne_chainId` returns `3`.
 
 ### `omne_networkInfo`
 
@@ -36,8 +44,8 @@ Returns network configuration and status.
 {
   "jsonrpc":"2.0",
   "result": {
-    "chainId": 0,
-    "networkName": "primum",
+    "chainId": 3,
+    "networkName": "ignis",
     "protocolVersion": "1.0.0"
   },
   "id":1
@@ -61,17 +69,17 @@ Returns the service registry snapshot.
 Returns the OMC balance for an address.
 
 **Parameters:**
-1. `address` (string) — `omne1...` format
+1. `address` (string) — `om1z...` format
 
 ```json
 // Request
-{"jsonrpc":"2.0","method":"omne_getBalance","params":["omne1a3f7c9b2d..."],"id":1}
+{"jsonrpc":"2.0","method":"omne_getBalance","params":["om1za3f7c9b2d..."],"id":1}
 
 // Response
 {
   "jsonrpc":"2.0",
   "result": {
-    "address": "omne1a3f7c9b2d...",
+    "address": "om1za3f7c9b2d...",
     "balance": "1000000000000000000",
     "balanceOMC": "1.000000000000000000"
   },
@@ -87,7 +95,7 @@ Returns full account information including balance and nonce.
 1. `address` (string)
 
 ```json
-{"jsonrpc":"2.0","method":"omne_getAccount","params":["omne1..."],"id":1}
+{"jsonrpc":"2.0","method":"omne_getAccount","params":["om1z..."],"id":1}
 ```
 
 ### `omne_getNonce`
@@ -99,7 +107,7 @@ Returns the current transaction nonce for an address.
 
 ```json
 // Request
-{"jsonrpc":"2.0","method":"omne_getNonce","params":["omne1..."],"id":1}
+{"jsonrpc":"2.0","method":"omne_getNonce","params":["om1z..."],"id":1}
 
 // Response
 {"jsonrpc":"2.0","result":5,"id":1}
@@ -121,8 +129,8 @@ Submit a transaction for inclusion in the mempool.
   "jsonrpc":"2.0",
   "method":"omne_sendTransaction",
   "params":[{
-    "from": "omne1sender...",
-    "to": "omne1recipient...",
+    "from": "om1zsender...",
+    "to": "om1zrecipient...",
     "value": "1000000000000000000",
     "gasLimit": 21000,
     "gasPrice": "1000",
@@ -144,8 +152,8 @@ Submit a pre-signed transaction. This is the primary method used by the SDK — 
   "jsonrpc":"2.0",
   "method":"omne_sendRawTransaction",
   "params":[{
-    "from": "omne1sender...",
-    "to": "omne1recipient...",
+    "from": "om1zsender...",
+    "to": "om1zrecipient...",
     "value": "1000000000000000000",
     "gasLimit": 21000,
     "gasPrice": "1000",
@@ -175,8 +183,8 @@ Returns the receipt for a mined transaction.
     "blockHeight": 42,
     "status": "success",
     "gasUsed": 21000,
-    "from": "omne1sender...",
-    "to": "omne1recipient..."
+    "from": "om1zsender...",
+    "to": "om1zrecipient..."
   },
   "id":1
 }
@@ -193,7 +201,7 @@ Estimate gas consumption for a transaction.
 
 ```json
 // Request
-{"jsonrpc":"2.0","method":"omne_estimateGas","params":[{"from":"omne1...","to":"omne1...","value":"1000000000000000000"}],"id":1}
+{"jsonrpc":"2.0","method":"omne_estimateGas","params":[{"from":"om1z...","to":"om1z...","value":"1000000000000000000"}],"id":1}
 
 // Response
 {"jsonrpc":"2.0","result":21000,"id":1}
@@ -227,7 +235,7 @@ Deploy a contract from an execution plan.
   "method":"omne_deployContract",
   "params":[{
     "bytecode": "0x...",
-    "from": "omne1deployer...",
+    "from": "om1zdeployer...",
     "gasLimit": 500000,
     "gasPrice": "1000"
   }],
@@ -260,8 +268,8 @@ Call a contract method (state-mutating or read-only).
   "params":[{
     "contractAddress": "contract_...",
     "method": "balanceOf",
-    "args": ["omne1holder..."],
-    "from": "omne1caller..."
+    "args": ["om1zholder..."],
+    "from": "om1zcaller..."
   }],
   "id":1
 }
@@ -339,7 +347,7 @@ Deploy a new ORC-20 fungible token.
 
 **Parameters:**
 1. `tokenAddress` (string)
-2. `holderAddress` (string) — `omne1...` format
+2. `holderAddress` (string) — `om1z...` format
 
 ### `omne_tokenTransfer`
 
@@ -374,14 +382,1083 @@ Query information about a registered compute node.
 
 ---
 
+## Node status
+
+### `net_version`
+
+Returns the node's configured `network_id` as a base-10 decimal string. Ethereum-compatible. Unlike `omne_chainId` (which encodes the same value as hex), `net_version` always emits decimal. Connected to **Ignis** (`network_id = 3`), this returns `"3"`.
+
+```json
+// Request
+{"jsonrpc":"2.0","method":"net_version","params":[],"id":1}
+
+// Response (connected to Ignis)
+{"jsonrpc":"2.0","result":"3","id":1}
+```
+
+### `omne_nodeStatus`
+
+Returns a snapshot of the node's current operational state, including its declared role, connected peers, network counters, persisted security height, and aggregated security/rate-limit statistics. Takes no parameters. Field names use `snake_case`. The snapshot is refreshed by the node on its internal cadence; `last_updated` reports the unix timestamp (seconds) of the last refresh.
+
+```json
+// Request
+{"jsonrpc":"2.0","method":"omne_nodeStatus","params":[],"id":1}
+
+// Response
+{
+  "jsonrpc":"2.0",
+  "result": {
+    "network_id": 3,
+    "node_role": "full",
+    "peer_count": 2,
+    "peers": [
+      {
+        "peer_id": "12D3KooWExamplePeerIdA",
+        "address": "/ip4/203.0.113.10/tcp/30333",
+        "uptime_seconds": 4821,
+        "seconds_since_last_seen": 3,
+        "ping_ms": 42,
+        "protocol_version": "omne/0.1.0",
+        "best_commerce_block": 6840892,
+        "best_security_block": 756,
+        "reputation": 0.98,
+        "geography": "US/datacenter"
+      },
+      {
+        "peer_id": "12D3KooWExamplePeerIdB",
+        "address": "/ip4/198.51.100.7/tcp/30333",
+        "uptime_seconds": 1290,
+        "seconds_since_last_seen": 11,
+        "ping_ms": 87,
+        "protocol_version": "omne/0.1.0",
+        "best_commerce_block": 6840891,
+        "best_security_block": 756,
+        "reputation": 0.91,
+        "geography": "DE"
+      }
+    ],
+    "stats": {
+      "connected_peers": 2,
+      "messages_sent": 18402,
+      "messages_received": 17988,
+      "bytes_sent": 12849201,
+      "bytes_received": 12044112,
+      "handshake_reject_total": 0,
+      "topic_reject_total": 0,
+      "protocol_mismatch_disconnect_total": 0,
+      "network_mismatch_disconnect_total": 0,
+      "uptime_seconds": 4821,
+      "average_ping_ms": 64.5
+    },
+    "best_persisted_security_height": 756,
+    "security": {
+      "ddos_total_ip_connections": 2,
+      "ddos_banned_ips": 0,
+      "ddos_active_peers": 2,
+      "rate_limit_active_peer_limiters": 2,
+      "rate_limit_active_message_limiters": 6,
+      "rate_limit_global_limiters": 1,
+      "total_tracked_peers": 2,
+      "rate_limit_denied_total": 0,
+      "rate_limit_denied_global_limit": 0,
+      "rate_limit_denied_message_type_limit": 0,
+      "rate_limit_denied_peer_limit": 0,
+      "rate_limit_denied_priority_limit": 0,
+      "rate_limit_denied_bandwidth_limit": 0,
+      "rate_limit_denied_fraud_policy": 0,
+      "rate_limit_denied_circuit_breaker": 0,
+      "average_reputation": 0.945,
+      "good_peers": 2,
+      "warning_peers": 0,
+      "poor_peers": 0,
+      "banned_peers": 0
+    },
+    "last_updated": 1748505600
+  },
+  "id":1
+}
+```
+
+Notes:
+
+- `node_role` reflects the role the binary was started with (e.g. `full`, `validator`, `gateway`).
+- `best_persisted_security_height` is `null` when no security block has been persisted yet.
+- `peers[].ping_ms`, `protocol_version`, `best_commerce_block`, `best_security_block`, `reputation`, and `geography` are each nullable.
+
+---
+
+## Security finality
+
+PoVERA produces a second class of blocks — security blocks — on a slower cadence than commerce blocks. These methods report finality state from the security layer.
+
+### `omne_bestSecurityHeight`
+
+Returns the height of the most recent security block as a bare lowercase hex string (no `0x` prefix), or `null` if the node has no security store configured or no security block has been produced yet.
+
+Takes no parameters.
+
+```json
+// Request
+{"jsonrpc":"2.0","method":"omne_bestSecurityHeight","params":[],"id":1}
+
+// Response
+{"jsonrpc":"2.0","result":"2f4","id":1}
+```
+
+### `omne_securityBlockNumber`
+
+Returns the height of the most recent security block as an integer (`0` if none).
+
+```json
+// Request
+{"jsonrpc":"2.0","method":"omne_securityBlockNumber","params":[],"id":1}
+
+// Response
+{"jsonrpc":"2.0","result":756,"id":1}
+```
+
+### `omne_latestSecurityBlock`
+
+Returns the most recent security block produced by the dual-layer consensus, surfacing the reward breakdown, fee routing accounts, execution-state commitment, VDP commitments, system operations, and proposer signature material. `result` is `null` when no security block has been produced yet.
+
+**Parameters:** none.
+
+```json
+// Request
+{"jsonrpc":"2.0","method":"omne_latestSecurityBlock","params":[],"id":1}
+
+// Response
+{
+  "jsonrpc":"2.0",
+  "result": {
+    "number": 1,
+    "hash": "5d2c...e0a1",
+    "timestamp": 1748370000000,
+    "computationalRevenueQuar": 0,
+    "validatorRewards": [
+      {
+        "validator": "om1zvalidator0qexamplehexpayload00000000000000000000",
+        "amount": 50.0,
+        "reward_type": "BlockProduction",
+        "stake_weight": 1.0
+      }
+    ],
+    "rewardBreakdown": {
+      "block_height": 1,
+      "ogt_reward": 50,
+      "omc_reward_quar": 200000000,
+      "revenue_subsidy_quar": 0,
+      "subsidy_rate_bps": 1000,
+      "rolling_revenue_quar": 0
+    },
+    "commerceStateCommitment": {
+      "block_range": [1, 1],
+      "merkle_root": "0000000000000000000000000000000000000000000000000000000000000000",
+      "transaction_count": 0,
+      "total_gas_used": 0,
+      "total_fees": 0
+    },
+    "executionStateCommitment": {
+      "stateRoot": "0000000000000000000000000000000000000000000000000000000000000000",
+      "executionTraceHash": "0000000000000000000000000000000000000000000000000000000000000000",
+      "budgetReportHash": "0000000000000000000000000000000000000000000000000000000000000000",
+      "sourceBlockHeight": 1
+    },
+    "vdpCommitments": [],
+    "vdpRevenueSnapshot": {
+      "total_recorded_quar": 0,
+      "pending_quar": 0,
+      "committed_quar": 0,
+      "slashed_quar": 0
+    },
+    "blockFees": {
+      "totalFeesQuar": 0,
+      "treasuryQuar": 0,
+      "validatorQuar": 0,
+      "povcRevenueQuar": 0,
+      "treasuryFromPovcQuar": 0,
+      "validatorFromPovcQuar": 0,
+      "slashBurnQuar": 0,
+      "feeTreasuryAddress": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "slashSinkAddress": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "feeVaultAddress": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "validatorFeePoolAddress": "0x0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "slashedStakeOgt": 0,
+    "systemOperations": [
+      {
+        "type": "RewardMint",
+        "from": "",
+        "to": "om1zvalidator0qexamplehexpayload00000000000000000000",
+        "amount": "50",
+        "token": "OGT"
+      },
+      {
+        "type": "RewardMint",
+        "from": "",
+        "to": "om1zvalidator0qexamplehexpayload00000000000000000000",
+        "amount": "200000000",
+        "token": "OMC"
+      }
+    ],
+    "proposer": "om1zvalidator0qexamplehexpayload00000000000000000000",
+    "proposerSignature": "a1b2...f0",
+    "proposerPublicKey": "9c8d...4e",
+    "signatureVerified": true
+  },
+  "id":1
+}
+```
+
+Notes:
+
+- Fields under `executionStateCommitment` and `blockFees` are emitted with explicit camelCase keys; nested objects elsewhere (`validatorRewards[]`, `rewardBreakdown`, `commerceStateCommitment`, `vdpCommitments[]`, `vdpRevenueSnapshot`) use the underlying Rust struct's snake_case serialization.
+- `systemOperations[].type` is one of `RewardMint`, `FeeDistribution`, `FeeVaultSeed`; `systemOperations[].token` is one of `OGT`, `OMC`. `amount` is rendered as a decimal string in the operation's smallest unit.
+- `proposerSignature` and `proposerPublicKey` are bare lowercase hex (no `0x` prefix) and may be omitted when the proposer has not yet signed.
+- Fee routing addresses are 32-byte hex strings prefixed with `0x`.
+
+
+### `omne_getSecurityBlockByNumber`
+
+Returns a security block by height from the persistent security block store. Returns the latest security block (per `best_security_height`) when the height is omitted, when it is the string `"latest"`, or when an unparseable string is supplied. Numeric strings are accepted and parsed as `u64`. Responses carry `layer: "security"` so explorers can render commerce and security layers uniformly. `gasUsed` and `gasLimit` are always `0` because security blocks do not meter gas; protocol-level state mutations are exposed as `system_operations` (mirrored into `transactions` for explorer parity). Returns `null` when no matching block exists.
+
+**Parameters:**
+1. `height` (integer | numeric string | `"latest"`, optional) — defaults to the best known security height.
+
+```json
+// Request
+{"jsonrpc":"2.0","method":"omne_getSecurityBlockByNumber","params":[756],"id":1}
+
+// Response
+{
+  "jsonrpc":"2.0",
+  "result": {
+    "number": 756,
+    "hash": "0x9a1c...",
+    "timestamp": 1748370000,
+    "layer": "security",
+    "proposer": "om1zproposer000000000000000000000000000000000",
+    "computationalRevenueQuar": 0,
+    "validatorRewardCount": 1,
+    "systemOperationCount": 2,
+    "transactionCount": 2,
+    "gasUsed": 0,
+    "gasLimit": 0,
+    "blockFees": {
+      "totalFeesQuar": 0,
+      "treasuryQuar": 0,
+      "validatorQuar": 0,
+      "povcRevenueQuar": 0,
+      "treasuryFromPovcQuar": 0,
+      "validatorFromPovcQuar": 0,
+      "slashBurnQuar": 0,
+      "feeTreasuryAddress": "0x0000000000000000000000000000000000000000",
+      "slashSinkAddress": "0x0000000000000000000000000000000000000000",
+      "feeVaultAddress": "0x0000000000000000000000000000000000000000",
+      "validatorFeePoolAddress": "0x0000000000000000000000000000000000000000"
+    },
+    "transactions": [
+      {
+        "hash": "sec-756-om1zproposer000000000000000000000000000000000",
+        "from": "",
+        "to": "om1zproposer000000000000000000000000000000000",
+        "value": "1000000000",
+        "type": "RewardMint",
+        "token": "OGT"
+      },
+      {
+        "hash": "sec-756-om1ztreasury000000000000000000000000000000000",
+        "from": "om1zfeevault000000000000000000000000000000000",
+        "to": "om1ztreasury000000000000000000000000000000000",
+        "value": "0",
+        "type": "FeeDistribution",
+        "token": "OMC"
+      }
+    ]
+  },
+  "id":1
+}
+```
+
+Response fields:
+
+- `number`, `hash`, `timestamp` — security block identifiers.
+- `layer` — always `"security"`.
+- `proposer` — `om1z…` bech32m address of the block proposer (from `povera_data`).
+- `computationalRevenueQuar` — computational revenue credited in this block, in quar.
+- `validatorRewardCount` — number of validator reward entries committed in the block.
+- `systemOperationCount` / `transactionCount` — both equal the length of `system_operations`; `transactionCount` is provided for parity with commerce blocks.
+- `gasUsed`, `gasLimit` — always `0`; security blocks do not meter gas.
+- `blockFees` — fee routing accounting. Numeric fields (`totalFeesQuar`, `treasuryQuar`, `validatorQuar`, `povcRevenueQuar`, `treasuryFromPovcQuar`, `validatorFromPovcQuar`, `slashBurnQuar`) are quar-denominated. Address fields (`feeTreasuryAddress`, `slashSinkAddress`, `feeVaultAddress`, `validatorFeePoolAddress`) are hex-encoded with a `0x` prefix.
+- `transactions[]` — projection of `system_operations`. Each entry exposes `hash` (synthetic, formatted as `sec-{number}-{to}`), `from` (empty string for protocol mints), `to`, `value` (decimal string of the `u128` amount in the token's smallest unit), `type` (`RewardMint` | `FeeDistribution` | `FeeVaultSeed`), and `token` (`OMC` | `OGT`).
+
+If no security block exists at the requested height, `result` is `null`.
+
+
+---
+
+## PoVERA challenges
+
+Challenges are disputes raised against validators under the PoVERA consensus mechanism. Resolving a challenge is a privileged operation requiring an authorization token.
+
+### `omne_getPendingChallenges`
+
+Returns all currently unresolved challenges.
+
+```json
+// Request
+{"jsonrpc":"2.0","method":"omne_getPendingChallenges","params":[],"id":1}
+
+// Response
+{"jsonrpc":"2.0","result":[],"id":1}
+```
+
+### `omne_getResolvedChallenges`
+
+Returns resolved challenges.
+
+```json
+// Request
+{"jsonrpc":"2.0","method":"omne_getResolvedChallenges","params":[],"id":1}
+
+// Response
+{"jsonrpc":"2.0","result":[],"id":1}
+```
+
+### `omne_getChallengeById`
+
+Returns the persisted `ChallengeRecord` for a numeric challenge ID, or `null` when no record exists. The handler accepts the ID as either a JSON number or a decimal string (no hex prefix). Both positional and object parameter forms are supported.
+
+**Parameters:**
+1. Positional: a single `u64` challenge ID, e.g. `[42]` or `["42"]`.
+2. Object form: `{ "id": <u64> }`. The aliases `challengeId` and `challenge_id` are also accepted.
+
+```json
+// Request (positional)
+{"jsonrpc":"2.0","method":"omne_getChallengeById","params":[42],"id":1}
+
+// Request (object form)
+{"jsonrpc":"2.0","method":"omne_getChallengeById","params":[{"id":42}],"id":1}
+
+// Response (pending challenge)
+{
+  "jsonrpc":"2.0",
+  "result": {
+    "id": 42,
+    "block_number": 184219,
+    "block_hash": "9a1c8f7e5b3d2a4c6e8f0b1d3a5c7e9f2b4d6a8c0e2f4b6d8a0c2e4f6b8d0a2c",
+    "security_block_ref": 184000,
+    "fraud_proof_hash": "c4d8e9a1b3f5072c9e6a8b1d4f7e2c5a9b0d3f6e8a1c4b7d0f2e5a8b1c4d7e9f",
+    "submitted_at": 1717000000,
+    "expires_at": 1717086400,
+    "challenger": "om1zq8m6f4hsl3w7c4r3vlph6dfp2nx7t8y2u9k0a",
+    "offending_proposer": null,
+    "status": "Pending",
+    "accounting_update": null
+  },
+  "id":1
+}
+
+// Response (resolved challenge)
+{
+  "jsonrpc":"2.0",
+  "result": {
+    "id": 42,
+    "block_number": 184219,
+    "block_hash": "9a1c8f7e5b3d2a4c6e8f0b1d3a5c7e9f2b4d6a8c0e2f4b6d8a0c2e4f6b8d0a2c",
+    "security_block_ref": 184000,
+    "fraud_proof_hash": "c4d8e9a1b3f5072c9e6a8b1d4f7e2c5a9b0d3f6e8a1c4b7d0f2e5a8b1c4d7e9f",
+    "submitted_at": 1717000000,
+    "expires_at": 1717086400,
+    "challenger": "om1zq8m6f4hsl3w7c4r3vlph6dfp2nx7t8y2u9k0a",
+    "offending_proposer": "om1zr5p3a9k2v8c1d6e4f7h0j2l5n8q3s6t9w2y5b",
+    "status": {
+      "Resolved": {
+        "verdict": "ProvenFraud",
+        "resolved_at": 1717050000,
+        "note": "attestation confirmed"
+      }
+    },
+    "accounting_update": null
+  },
+  "id":1
+}
+
+// Response (no record)
+{"jsonrpc":"2.0","result":null,"id":1}
+```
+
+Field notes:
+
+- `id`, `block_number`, `security_block_ref`, `submitted_at`, `expires_at` are unsigned 64-bit integers.
+- `block_hash` and `fraud_proof_hash` are lowercase hex strings (no `0x` prefix).
+- `challenger` and `offending_proposer` are nullable bech32m `om1z…` addresses.
+- `status` is an externally-tagged enum: either the bare string `"Pending"`, or `{ "Resolved": { "verdict": ..., "resolved_at": <u64>, "note": <string|null> } }`. `verdict` is one of `"ProvenFraud"`, `"Rejected"`, `"Expired"`, or `"Cleared"`.
+- `accounting_update` is `null` unless an accounting payload was attached during resolution.
+
+**Errors:**
+
+- `-32602` — missing parameters, non-numeric ID, or object form lacking `id` / `challengeId` / `challenge_id`.
+- `-32000` — internal error reading the challenge registry.
+
+
+### `omne_resolveChallenge`
+
+Submits a resolution for a pending challenge. Persists the verdict to the challenge registry, updates Prometheus challenge metrics, and — when the verdict is `proven_fraud` — drops the offending commerce block from the pending queue and applies the associated accounting adjustment. Requires an authorization token.
+
+The handler returns the full `ChallengeRecord` after resolution. If the challenge ID is unknown, `result` is `null`. If the challenge has already been resolved, the existing record is returned unchanged.
+
+**Parameters:**
+
+Accepts either positional or named form.
+
+Positional: `[id, verdict, note?]`
+- `id` (integer or numeric string) — challenge ID.
+- `verdict` (string) — one of `proven_fraud`, `rejected`, `expired`, `cleared`. The handler also accepts the aliases `proven-fraud`, `fraud_proven`, `fraud`, `valid` (all map to `ProvenFraud`); `invalid` (maps to `Rejected`); `timeout` (maps to `Expired`); and `dismissed`, `manual` (map to `Cleared`). Matching is case-insensitive.
+- `note` (string, optional) — free-form operator note.
+
+Named: an object with
+- `id` (or alias `challengeId` / `challenge_id`) — required.
+- `verdict` (or alias `resolution`) — required.
+- `note` (or alias `message` / `reason`) — optional.
+
+```json
+// Request
+{"jsonrpc":"2.0","method":"omne_resolveChallenge","params":[{"id":42,"verdict":"proven_fraud","note":"attestation confirmed"}],"id":1}
+
+// Response
+{
+  "jsonrpc":"2.0",
+  "result": {
+    "id": 42,
+    "block_number": 755,
+    "block_hash": "0x...",
+    "security_block_ref": 120,
+    "fraud_proof_hash": "0x...",
+    "submitted_at": 1748370000,
+    "expires_at": 1748373600,
+    "challenger": "om1z...",
+    "status": {
+      "Resolved": {
+        "verdict": "ProvenFraud",
+        "resolved_at": 1748370450,
+        "note": "attestation confirmed"
+      }
+    },
+    "offending_proposer": "om1z...",
+    "accounting_update": null
+  },
+  "id":1
+}
+```
+
+`status` is an externally-tagged enum: a pending record serializes as the bare string `"Pending"`; a resolved record serializes as `{"Resolved": {...}}` with `verdict` taking one of `"ProvenFraud"`, `"Rejected"`, `"Expired"`, or `"Cleared"`. `challenger`, `offending_proposer`, and `accounting_update` may be `null`.
+
+**Errors:**
+- `-32000` — missing params, params not an array or object, missing/non-numeric `id`, missing `verdict`, unrecognized verdict string, or challenge registry not configured on this node.
+
+---
+
+## Validators
+
+### `omne_registerValidator`
+
+Validates a validator registration payload against the node's active network profile and manifest, appends it to the node's `validator-registrations.jsonl` registry, and returns the persisted record. Requires an authorization token.
+
+**Parameters:**
+
+A single registration payload, accepted either as the first element of a positional array or as a bare object. Recognized fields:
+
+- `operator_address` (string, required) — bech32m om1z address of the operator. Alias: `address`.
+- `stake_ogt` (integer, required) — stake in OGT as an unsigned 64-bit integer. Must fall within the network profile's effective stake range. Aliases: `stake`, `stakeOGT`.
+- `controller_key` (string, optional) — hex-encoded controller key. Alias: `controllerKey`.
+- `consensus_key` (string, optional) — hex-encoded consensus key. Alias: `consensusKey`.
+- `commission_bps` (integer, optional) — commission in basis points, 0–10000. Alias: `commissionBps`.
+- `metadata` (object, optional) — free-form operator metadata; defaults to `{}` when omitted.
+- `network` (string, optional) — network selector (e.g. `"ignis"`). When present, must match the node's configured network.
+
+```json
+// Request
+{"jsonrpc":"2.0","method":"omne_registerValidator","params":[{"operator_address":"om1zexampleoperatoraddressxxxxxxxxxxxxxxxxxxx","stake_ogt":50000,"consensusKey":"a1b2c3d4e5f60718293a4b5c6d7e8f90","commission_bps":500,"network":"ignis"}],"id":1}
+
+// Response
+{
+  "jsonrpc":"2.0",
+  "result": {
+    "registration_id": "ignis:om1zexampleoperatoraddressxxxxxxxxxxxxxxxxxxx:1748370000",
+    "operator_address": "om1zexampleoperatoraddressxxxxxxxxxxxxxxxxxxx",
+    "network": "ignis",
+    "stake_ogt": 50000,
+    "commission_bps": 500,
+    "controller_key": null,
+    "consensus_key": "a1b2c3d4e5f60718293a4b5c6d7e8f90",
+    "metadata": {},
+    "timestamp": 1748370000,
+    "config_path": "/var/lib/omne-node/config.toml",
+    "registry_path": "/var/lib/omne-node/validator-registrations.jsonl"
+  },
+  "id":1
+}
+```
+
+**Errors:**
+
+- `-32602` — malformed payload, missing or non-object params, unknown `network` selector, network mismatch against the node profile, `stake_ogt` outside the network's effective stake range, or `commission_bps` greater than 10000.
+- `-32000` — registry directory or file could not be created, opened, serialized, or written.
+
+
+---
+
+## Governance
+
+### `omne_getGovernanceRate`
+
+Returns the DAO-set OMC/USD governance rate used across Omne commerce surfaces (e.g. Stoa). Content is priced in USD and paid in OMC equivalent at this rate. The response includes a fixed `$2.99` conversion sample so clients can sanity-check their own OMC/Quar math.
+
+Takes no parameters.
+
+```json
+// Request
+{"jsonrpc":"2.0","method":"omne_getGovernanceRate","params":[],"id":1}
+
+// Response
+{
+  "jsonrpc":"2.0",
+  "result": {
+    "omcUsdCents": 100,
+    "omcUsd": "1.00",
+    "effectiveDate": "2025-01-01",
+    "note": "Initial DAO governance rate — $1.00 per OMC",
+    "pricingModel": "Priced in USD, paid in OMC equivalent at current governance rate",
+    "conversionExample": {
+      "usdCents": 299,
+      "description": "$2.99 article on Stoa",
+      "omcEquivalent": "2.9900",
+      "quarEquivalent": 2990000000
+    }
+  },
+  "id":1
+}
+```
+
+Response fields:
+
+- `omcUsdCents` — OMC price in USD cents (`u64`; `100` = $1.00 per OMC).
+- `omcUsd` — `omcUsdCents` rendered as a USD string to 2 decimals.
+- `effectiveDate` — ISO-8601 date the rate became effective.
+- `note` — human-readable annotation supplied by governance.
+- `pricingModel` — fixed string describing the pricing convention.
+- `conversionExample.usdCents` — always `299` (the $2.99 reference price).
+- `conversionExample.omcEquivalent` — OMC amount as a string to 4 decimals.
+- `conversionExample.quarEquivalent` — OMC amount in Quar (`u128`, integer). Computed as `(299 * 1_000_000_000) / omcUsdCents`.
+
+
+---
+
+## Telemetry
+
+### `omne_consensusTelemetry`
+
+Returns a snapshot of the dual-layer consensus engine, including commerce and security block heights, validator participation, reward and revenue-subsidy state, treasury and validator-fee-pool balances, cumulative slashing counters, fraud-proof persistence counters, the latest finalized block, and the per-block fee breakdown for the most recent security block. The handler takes no parameters.
+
+The response struct is serialized with snake_case field names. `latest_committed_range`, `latest_finalized_block`, `latest_block_fees`, and `proposer_reputation_score` are nullable and will be `null` before the security layer has produced a block or attached a reputation service.
+
+```json
+// Request
+{"jsonrpc":"2.0","method":"omne_consensusTelemetry","params":[],"id":1}
+
+// Response
+{
+  "jsonrpc":"2.0",
+  "result": {
+    "commerce_height": 42,
+    "security_height": 7,
+    "active_validators": 3,
+    "pending_commerce_blocks": 3,
+    "delayed_finality_queue_depth": 4,
+    "last_security_commit": 21,
+    "latest_committed_range": [18, 21],
+    "current_reward_ogt": 1.5,
+    "current_reward_omc_quar": 2,
+    "current_revenue_subsidy_quar": 3,
+    "subsidy_rate_bps": 15,
+    "total_rewards_distributed": 10.0,
+    "total_omc_distributed_quar": 4,
+    "total_revenue_subsidy_quar": 5,
+    "dao_treasury_balance_quar": 6,
+    "validator_fee_pool_quar": 12,
+    "slashed_revenue_quar": 7,
+    "slashed_stake_ogt": 2,
+    "latest_slashed_stake_ogt": 1,
+    "instant_finality_rate": 0.85,
+    "avg_transaction_fee_quar": 9,
+    "computational_revenue_quar": 11,
+    "rolling_avg_computational_revenue_quar": 13,
+    "revenue_baseline_mode": "rolling-average",
+    "revenue_smoothing_enabled": true,
+    "revenue_window_size": 8,
+    "revenue_window_filled": 6,
+    "revenue_window_min_samples": 5,
+    "revenue_window_samples_needed": 2,
+    "latest_finalized_block": null,
+    "latest_block_fees": {
+      "total_fees_quar": 100,
+      "povc_revenue_quar": 200,
+      "treasury_quar": 40,
+      "treasury_from_povc_quar": 80,
+      "validator_quar": 60,
+      "validator_from_povc_quar": 120,
+      "slash_burn_quar": 5
+    },
+    "legacy_povc_compatibility_enabled": true,
+    "legacy_povc_retained_total": 4,
+    "legacy_povc_pruned_total": 2,
+    "fraud_proofs_persisted_total": 7,
+    "fraud_proof_last_submitted_at": 1700000100,
+    "fraud_proof_last_expires_at": 1700000200,
+    "timestamp_ms": 1700000000000,
+    "proposer_reputation_score": 0.78
+  },
+  "id":1
+}
+```
+
+
+### `omne_deterministicTelemetry`
+
+Returns recent deterministic-execution telemetry records pulled from `BlockchainStatePersistence`. Each record captures a committed block's state root, ordered execution trace, and deterministic VM-tier budget report.
+
+The emitter is stateful: it tracks the highest `block_height` it has already returned and skips records at or below that height on subsequent calls. A node that has produced no execution records, or whose records have all already been emitted, returns an empty array.
+
+**Parameters:**
+
+Accepts either positional or named form.
+
+- Positional: `[limit]`
+- Named: `{ "limit": <integer> }`
+
+| Field | Type | Default | Notes |
+|---|---|---|---|
+| `limit` | integer | `5` | Maximum number of records to return. `0` short-circuits to an empty array. |
+
+```json
+// Request (positional)
+{"jsonrpc":"2.0","method":"omne_deterministicTelemetry","params":[5],"id":1}
+
+// Request (named)
+{"jsonrpc":"2.0","method":"omne_deterministicTelemetry","params":{"limit":5},"id":1}
+```
+
+Each element of the response array is a `TelemetryPayload`:
+
+| Field | Type | Notes |
+|---|---|---|
+| `block_height` | integer (u64) | Height of the committed block this record describes. |
+| `state_root` | array of 32 integers | Post-execution state root, serialized as a 32-byte array. |
+| `execution_trace` | array | Ordered execution-trace entries (transaction id, VM tier, priority, deterministic cost, outcome). |
+| `budget_report` | object | Per-tier deterministic budget accounting (commerce / standard / compute initial, consumed, remaining, plus block gas totals). |
+| `emitted_at` | integer (u64) | Unix epoch seconds at which the payload was emitted. |
+
+```json
+// Response
+{
+  "jsonrpc":"2.0",
+  "result": [
+    {
+      "block_height": 10,
+      "state_root": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      "execution_trace": [
+        {
+          "transaction_id": [42,42,42,42,42,42,42,42,42,42,42,42,42,42,42,42,42,42,42,42,42,42,42,42,42,42,42,42,42,42,42,42],
+          "priority": "Commerce",
+          "vm_tier": "FastVM",
+          "deterministic_cost": 50,
+          "outcome": { "Succeeded": { "gas_used": 40 } }
+        }
+      ],
+      "budget_report": {
+        "commerce_initial": 100,
+        "commerce_consumed": 40,
+        "commerce_remaining": 60,
+        "standard_initial": 50,
+        "standard_consumed": 10,
+        "standard_remaining": 40,
+        "compute_initial": 25,
+        "compute_consumed": 5,
+        "compute_remaining": 20,
+        "block_gas_limit": 200,
+        "block_gas_used": 55,
+        "block_gas_remaining": 145
+      },
+      "emitted_at": 1748534400
+    }
+  ],
+  "id":1
+}
+```
+
+**Errors:**
+
+| Code | Condition |
+|---|---|
+| `-32000` | `serde_json` failed to serialize an execution trace or budget report for one of the returned records. |
+
+
+---
+
+## Verifiable deterministic processing (VDP)
+
+VDP jobs run on the OON compute layer with verifiable completion proofs. Submission and completion are privileged operations requiring an authorization token.
+
+### `omne_submitVdpJob`
+
+Submits a computational job to the VDP coordination layer. The job is queued, then the node immediately attempts to assign it to an eligible provider. Returns the accepted job ID and a `submitted` status. Requires an authorization token.
+
+**Parameters:**
+
+Accepts either a single-element array containing the job object or the object directly as `params`. Recognized fields:
+
+- `job_id` (string, optional) — caller-supplied identifier. Defaults to `vdp-job-<unix_seconds>`.
+- `requester` (string, optional) — free-form requester label. Defaults to `"rpc-client"`.
+- `job_type` (string, optional) — one of `rendering` (aliases: `rendering3d`, `3d`), `ai` (aliases: `ai_training`, `aitraining`, `machine_learning`, `ml`), `data` (aliases: `data_processing`, `dataprocessing`), `simulation`, `crypto` (alias: `cryptographic`). Any other value is accepted as a custom job type. Defaults to `custom`. Case-insensitive.
+- `input_data` (string, optional) — bare lowercase hex (no `0x` prefix). Defaults to empty.
+- `expected_output_size` (u64, optional) — bytes. Defaults to the length of `input_data`.
+- `max_execution_time` (u64, optional) — seconds. Defaults to `3600`.
+- `payment_amount_ogt` (u64, optional) — OGT bid for the job. Defaults to `100`.
+- `verification_method` (string, optional) — one of `state_hash` (alias: `statehash`), `zk_proof` (aliases: `zkproof`, `zk`), `replication`, `benchmark`. Defaults to `state_hash`. Case-insensitive.
+- `verifiable` (bool, optional) — defaults to `true`.
+- `deterministic` (bool, optional) — defaults to `true`.
+- `parallelizable` (bool, optional) — defaults to `false`.
+- `deadline` (u64, optional) — unix seconds. Defaults to `created_at + max_execution_time`.
+
+```json
+// Request
+{"jsonrpc":"2.0","method":"omne_submitVdpJob","params":[{"job_type":"ai","input_data":"deadbeef","expected_output_size":1024,"max_execution_time":600,"payment_amount_ogt":250,"verification_method":"zk_proof","verifiable":true,"deterministic":true,"parallelizable":false,"requester":"om1zexamplerequesteraddress0000000000000000"}],"id":1}
+
+// Response
+{
+  "jsonrpc":"2.0",
+  "result": {
+    "job_id": "vdp-job-1748563200",
+    "status": "submitted"
+  },
+  "id":1
+}
+```
+
+**Errors:**
+
+- `-32602` — missing params, params not an object/array, empty array, malformed `input_data` hex, unknown `verification_method`.
+- `-32000` — coordination layer rejected the job (queue full, duplicate ID, or provider assignment failure).
+
+
+### `omne_completeVdpJob`
+
+Records VDP job completion, runs coordination verification, and returns the resulting attestation certificate. If a `provider` object is included, the provider is registered with the coordinator before the completion is processed. Requires an authorization token.
+
+**Parameters:**
+1. A completion payload object. Recognized fields:
+   - `job_id` (string, required) — identifier returned by `omne_submitVdpJob`.
+   - `node_id` (string, optional, default `"devnet-provider"`) — provider node submitting the completion.
+   - `output_data` (bare hex string, optional) — job output bytes; defaults to `deadbeef` when omitted.
+   - `result_hash` (bare hex string, optional) — hash of the result; defaults to `cafebabe` when omitted.
+   - `execution_time` (integer seconds, optional, default `60`).
+   - `gas_used` (integer, optional, default `250000`).
+   - `node_attestation` (string, optional) — free-form attestation note.
+   - `verification_status` (string, optional, default `"verified"`) — one of `verified` / `success` / `ok` / `pending`; any other value is treated as failure.
+   - `revenue_quar` (integer or decimal string, optional) — revenue in quar.
+   - `resource_usage` (object, optional) — `cpu_time_seconds`, `memory_peak_gb`, `storage_used_gb`, `network_io_mb`, `gpu_time_seconds`.
+   - `performance_metrics` (object, optional) — `throughput_ops_per_second`, `latency_ms`, `efficiency_score`, `quality_score`.
+   - `provider` (object, optional) — inline provider registration with `node_id`, `name`, `bond_amount_ogt`, `supported_job_types`, `capabilities`, `contact_info`, `stake_address`, and optional `role` (`compute` / `full` / `validator`).
+
+```json
+// Request
+{"jsonrpc":"2.0","method":"omne_completeVdpJob","params":[{"job_id":"job-7f3a","node_id":"dev-provider-1","output_data":"01","result_hash":"02","execution_time":45,"gas_used":12345,"verification_status":"verified","performance_metrics":{"throughput_ops_per_second":1024.0,"latency_ms":50,"efficiency_score":0.9,"quality_score":0.95}}],"id":1}
+
+// Response
+{
+  "jsonrpc":"2.0",
+  "result": {
+    "job_id": "job-7f3a",
+    "status": "completed",
+    "certificate_id": "cert-job-7f3a",
+    "node_id": "dev-provider-1",
+    "issued_at": 1748534400,
+    "expires_at": 1748538000,
+    "verification_passed": true
+  },
+  "id":1
+}
+```
+
+`issued_at` and `expires_at` are unix-second timestamps copied from the completion proof's `timestamp` and `validity_period.expires_at`. Returns `-32602` when `job_id` is missing or the payload is malformed, and `-32000` when provider registration or job completion fails inside the coordinator.
+
+
+---
+
+## OMP storage
+
+On-chain Media Persistence (OMP) stores large assets as chunked, manifest-addressed objects. These methods are available only when `omp_storage_enabled` is set in the network's feature flags. Storage-node registration is a privileged operation requiring an authorization token.
+
+### `omne_ompStoreAsset`
+
+Creates an asset manifest and begins an upload. Returns the asset ID and upload state.
+
+**Parameters:**
+1. An object: `assetId` (string, 1–128 chars), `owner` (string, 1–128 chars), `contentHash` (64 hex chars, SHA-256), `merkleRoot` (64 hex chars), `totalSize` (integer bytes), `chunkCount` (integer), `escrowOgt` (integer > 0), and optional `erasureCodec`, `redundancy`, `storageTier`.
+
+```json
+// Request
+{"jsonrpc":"2.0","method":"omne_ompStoreAsset","params":[{"assetId":"asset-001","owner":"om1z...","contentHash":"<64 hex>","merkleRoot":"<64 hex>","totalSize":10485760,"chunkCount":10,"escrowOgt":1000}],"id":1}
+
+// Response
+{
+  "jsonrpc":"2.0",
+  "result": {
+    "assetId": "asset-001",
+    "status": "uploading",
+    "chunkCount": 10,
+    "redundancy": 3,
+    "escrowOgt": 1000
+  },
+  "id":1
+}
+```
+
+### `omne_ompAddChunk`
+
+Adds a single data chunk to an in-progress asset.
+
+**Parameters:**
+1. An object: `assetId` (string), `index` (integer), `chunkHash` (hex), `size` (integer), and optional `merkleProof` (hex) and `data` (base64).
+
+```json
+// Request
+{"jsonrpc":"2.0","method":"omne_ompAddChunk","params":[{"assetId":"asset-001","index":0,"chunkHash":"<hex>","size":1048576}],"id":1}
+
+// Response
+{
+  "jsonrpc":"2.0",
+  "result": {
+    "assetId": "asset-001",
+    "chunkIndex": 0,
+    "dataStored": false,
+    "status": "accepted"
+  },
+  "id":1
+}
+```
+
+### `omne_ompFinalizeAsset`
+
+Finalizes an asset once all chunks have been added. The handler delegates to the OMP coordinator, which seals the manifest and transitions the asset out of the uploading state.
+
+**Parameters:**
+1. `assetId` (string, 1–128 chars) — positional string, not an object.
+
+```json
+// Request
+{"jsonrpc":"2.0","method":"omne_ompFinalizeAsset","params":["asset-001"],"id":1}
+
+// Response
+{
+  "jsonrpc":"2.0",
+  "result": { "assetId": "asset-001", "status": "finalized" },
+  "id":1
+}
+```
+
+**Errors:**
+- `-32000` `OMP storage not enabled on this network` — `omp_storage_enabled` feature flag is off.
+- `-32000` `Expected ["<assetId>"]` — params is not a single-element array of a string.
+- `-32000` `assetId must be 1-128 characters` — empty or oversized assetId.
+- `-32000` `OMP finalize failed: <reason>` — coordinator rejected finalization (e.g. missing chunks, unknown asset, manifest already finalized).
+
+### `omne_ompGetManifest`
+
+Returns the manifest for a stored asset. `finalizedAt` is `null` until `omne_ompFinalizeAsset` succeeds for the asset.
+
+**Parameters:**
+1. `assetId` (string, 1–128 chars) — positional.
+
+```json
+// Request
+{"jsonrpc":"2.0","method":"omne_ompGetManifest","params":["asset-001"],"id":1}
+
+// Response
+{
+  "jsonrpc":"2.0",
+  "result": {
+    "assetId": "asset-001",
+    "owner": "om1zexampleowneraddress",
+    "contentHash": "<64 hex chars>",
+    "merkleRoot": "<64 hex chars>",
+    "totalSize": 10485760,
+    "chunkCount": 10,
+    "status": "Finalized",
+    "storageTier": "Hot",
+    "redundancy": 3,
+    "escrowOgt": 1000,
+    "createdAt": 1748370000,
+    "finalizedAt": 1748370600
+  },
+  "id":1
+}
+```
+
+**Errors:**
+- `-32000` `OMP storage not enabled on this network` — `omp_storage_enabled` feature flag is off for this network.
+- `-32000` `Expected ["<assetId>"]` — params is not a single-element array containing a string.
+- `-32000` `assetId must be 1-128 characters` — empty or oversized asset ID.
+- `-32000` `OMP manifest not found: ...` — no manifest exists for the given asset ID.
+
+
+### `omne_ompGetRetrievalPlan`
+
+Returns a retrieval plan for a finalized asset: the content hash, total size, and a per-chunk list of storage-node endpoints the client can fetch from in parallel. Only available when OMP storage is enabled on the network.
+
+**Parameters:**
+1. `assetId` (string, 1–128 chars) — positional.
+
+```json
+// Request
+{"jsonrpc":"2.0","method":"omne_ompGetRetrievalPlan","params":["asset-001"],"id":1}
+
+// Response
+{
+  "jsonrpc":"2.0",
+  "result": {
+    "assetId": "asset-001",
+    "contentHash": "8f2c9d1e4b7a6f3c0d5e8a1b2c3d4e5f6789abcdef0123456789abcdef012345",
+    "totalSize": 10485760,
+    "chunkCount": 10,
+    "chunks": [
+      {
+        "index": 0,
+        "hash": "a1b2c3d4e5f60718293a4b5c6d7e8f90112233445566778899aabbccddeeff00",
+        "size": 1048576,
+        "endpoints": ["https://node-1.example.com", "https://node-2.example.com"]
+      }
+    ]
+  },
+  "id":1
+}
+```
+
+**Errors:**
+- `-32602` — params not `["<assetId>"]`, or `assetId` is empty or longer than 128 chars.
+- `-32602` — OMP storage not enabled on this network, asset not found, or asset is not in the `Finalized` state.
+
+### `omne_ompListAssets`
+
+Returns the non-archived asset IDs owned by an address. Accepts the owner either as a positional string or as an object with an `owner` field.
+
+**Parameters:**
+1. Either `[ownerAddress]` (string, 1–128 chars) or `[{ "owner": "..." }]`.
+
+```json
+// Request (positional)
+{"jsonrpc":"2.0","method":"omne_ompListAssets","params":["om1z..."],"id":1}
+
+// Request (named)
+{"jsonrpc":"2.0","method":"omne_ompListAssets","params":[{"owner":"om1z..."}],"id":1}
+
+// Response
+{
+  "jsonrpc":"2.0",
+  "result": {
+    "owner": "om1z...",
+    "assets": ["asset-001"],
+    "count": 1
+  },
+  "id":1
+}
+```
+
+**Errors:**
+- `-32000` — `OMP storage not enabled on this network` when the `omp_storage_enabled` feature flag is off.
+- `-32000` — `Expected ["owner_address"] or [{ "owner": "..." }]` when the owner is missing or not a string.
+- `-32000` — `owner must be 1-128 characters` when the owner string is empty or longer than 128 characters.
+
+
+### `omne_ompDeleteAsset`
+
+Archives a stored asset, removing its chunks. The owner must match the manifest.
+
+**Parameters:**
+1. An object: `assetId` (string), `owner` (string).
+
+```json
+// Request
+{"jsonrpc":"2.0","method":"omne_ompDeleteAsset","params":[{"assetId":"asset-001","owner":"om1z..."}],"id":1}
+
+// Response
+{
+  "jsonrpc":"2.0",
+  "result": { "assetId": "asset-001", "status": "archived", "chunksRemoved": 10 },
+  "id":1
+}
+```
+
+### `omne_ompRegisterStorageNode`
+
+Registers a storage node with the OMP layer. Requires an authorization token.
+
+**Parameters:**
+1. An object: `nodeId` (string), `name` (string), `capabilities` (object: `storageGb`, `uploadBandwidthMbps`, `downloadBandwidthMbps`, `supportsHotTier`, `supportsColdTier`, `region`), `contactInfo` (object: `endpointUrl`, `publicKey`, `networkAddress`, `apiVersion`), `bondAmountOgt` (integer), `stakeAddress` (string).
+
+```json
+// Request
+{"jsonrpc":"2.0","method":"omne_ompRegisterStorageNode","params":[{"nodeId":"node-001","name":"sn-eu-1","capabilities":{"storageGb":1024,"region":"eu"},"contactInfo":{"endpointUrl":"https://..."},"bondAmountOgt":5000,"stakeAddress":"om1z..."}],"id":1}
+
+// Response
+{
+  "jsonrpc":"2.0",
+  "result": { "nodeId": "node-001", "status": "registered" },
+  "id":1
+}
+```
+
+### `omne_ompStorageStats`
+
+Returns aggregate statistics for the OMP storage network.
+
+```json
+// Request
+{"jsonrpc":"2.0","method":"omne_ompStorageStats","params":[],"id":1}
+
+// Response
+{
+  "jsonrpc":"2.0",
+  "result": {
+    "totalNodes": 0,
+    "activeNodes": 0,
+    "totalStorageGb": 0,
+    "usedStorageGb": 0,
+    "totalChunksStored": 0
+  },
+  "id":1
+}
+```
+
+---
+
+## Subscriptions
+
+Real-time event streams are delivered over WebSocket connections (`wss://`). Subscriptions are managed by the WebSocket connection handler rather than the request/response dispatch: a subscription request returns a subscription ID, after which the node pushes notifications carrying that ID until the subscription is removed.
+
+Supported subscription types: `newBlock`, `newSecurityBlock`, `contractEvent`, `pendingTransaction`, `challenge`. The `@omne/sdk` client wraps this protocol — see the [event streaming example](/examples/event-stream). The `contractEvent` type accepts an optional filter object (for example, `{ "address": "om1z..." }`).
+
+---
+
 ## Identifier conventions
 
 All identifiers in requests and responses use canonical prefixes:
 
 | Type | Format | Example |
 |---|---|---|
-| Wallet address | `omne1{40 hex}` | `omne1a3f7c9b2d...` |
-| Contract address | `contract_{40 hex}` | `contract_5e8f1a...` |
-| Transaction ID | `txn_{64 hex}` | `txn_7b3c4d...` |
+| Wallet address | `om1z…` — bech32m, HRP `om`, witness version 2 (`z`); a 256-bit hash of an ML-DSA-44 public key | `om1zqypqxpq9qcrsszg2pvxq6rs0zqg3yyc5e2t0js` |
+| Contract address | `contract_` + 40 hex | `contract_5e8f1a...` |
+| Transaction ID | `txn_` + hex | `txn_7b3c4d...` |
 
-The RPC layer enforces these formats. Bare hex and `0x`-prefixed addresses are accepted for backwards compatibility but responses always use the canonical form.
+Wallet addresses are post-quantum: each is derived from an ML-DSA-44 (FIPS 204) public key, bech32m-encoded with the `om` human-readable part. The RPC layer enforces these formats and responses always use the canonical form.
