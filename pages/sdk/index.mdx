@@ -1,6 +1,8 @@
 # SDK Reference
 
-The `@omne/sdk` is the official TypeScript/JavaScript SDK for the Omne blockchain. It provides everything needed to build applications that interact with the network: wallet generation, transaction signing, RPC communication, token management, and contract deployment.
+The `@omne/sdk` is the official TypeScript/JavaScript SDK for the Omne blockchain. It provides everything needed to build applications that interact with the network: wallet generation, transaction signing, RPC communication, token management, and contract deployment. Addresses are encoded in the canonical `om1z…` (bech32m) form.
+
+> **Cryptography note.** Omne is post-quantum from the ground up. The SDK signs with **ML-DSA-44 (FIPS 204)** and derives canonical 32-byte `om1z` addresses — there is no Ed25519 path. See [Wallet](/sdk/wallet) for details.
 
 ## Install
 
@@ -12,7 +14,7 @@ npm install @omne/sdk
 
 | Export | Purpose |
 |---|---|
-| `Wallet` | BIP39 mnemonic generation, SLIP-0010 ed25519 HD derivation |
+| `Wallet` | BIP39 mnemonic generation, HD derivation of ML-DSA-44 keys |
 | `WalletAccount` | Individual account keypair with signing methods |
 | `WalletManager` | Multi-wallet orchestration |
 | `OmneClient` | JSON-RPC client (HTTP, WebSocket) for all blockchain operations |
@@ -29,7 +31,7 @@ import { Wallet, OmneClient } from '@omne/sdk'
 // Generate a wallet
 const wallet = Wallet.generate()
 const account = wallet.getAccount(0)
-console.log('Address:', account.address) // omne1...
+console.log('Address:', account.address) // om1z...
 
 // Connect to the network
 const client = new OmneClient('http://localhost:9944')
@@ -41,7 +43,7 @@ console.log(`${balance.balanceOMC} OMC`)
 // Transfer OMC
 const receipt = await client.transfer({
   from: account.address,
-  to: 'omne1recipient...',
+  to: 'om1zrecipient...',
   valueOMC: '1.0',
 })
 console.log('Tx:', receipt.transactionId)

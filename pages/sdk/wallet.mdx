@@ -1,6 +1,8 @@
 # Wallet
 
-The wallet system provides BIP39 mnemonic generation with SLIP-0010 ed25519 hierarchical deterministic key derivation. All signing happens client-side — private keys never leave the device.
+The wallet system provides BIP39 mnemonic generation with hierarchical deterministic derivation of **ML-DSA-44 (FIPS 204)** keys. All signing happens client-side — private keys never leave the device. Addresses are encoded in the canonical `om1z…` (bech32m) form.
+
+> **Cryptography note.** Omne is post-quantum from the ground up: the SDK signs with **ML-DSA-44 (FIPS 204)** and derives canonical 32-byte `om1z` addresses — there is no Ed25519 fallback. The portable secret is a 32-byte seed; the ML-DSA-44 keypair (1,312-byte public key, 2,560-byte secret key) is deterministically expanded from it, so keystores stay small. Signatures are 2,420 bytes. Build against the SDK's typed interfaces rather than hardcoding key/signature byte lengths.
 
 ## `Wallet`
 
@@ -27,7 +29,7 @@ const wallet = Wallet.fromMnemonic('abandon badge civil ...', 'optional-passphra
 
 #### `Wallet.fromPrivateKey(privateKey)`
 
-Create a standalone `WalletAccount` from a raw ed25519 private key (32 bytes, hex-encoded). No mnemonic, no HD derivation.
+Create a standalone `WalletAccount` from a raw 32-byte ML-DSA-44 seed (64 hex chars). The ML-DSA-44 keypair is expanded from the seed. No mnemonic, no HD derivation.
 
 ```typescript
 const account = Wallet.fromPrivateKey('a1b2c3d4...')
@@ -62,7 +64,7 @@ const primary = wallet.getAccount()     // index 0
 const second = wallet.getAccount(1)     // index 1
 ```
 
-Derivation path: `m/44'/60'/0'/0/{index}` (all hardened, per SLIP-0010).
+Derivation path: `m/44'/60'/0'/0/{index}` (hardened-only HMAC-SHA512 KDF; each leaf yields a 32-byte ML-DSA-44 seed).
 
 #### `getAccounts(count, startIndex?): WalletAccount[]`
 
@@ -78,7 +80,7 @@ const accounts = wallet.getAccounts(3, 10)   // indices 10–12
 Shorthand for the primary account's address (`getAccount(0).address`).
 
 ```typescript
-wallet.address // "omne1a3f7c..."
+wallet.address // "om1za3f7c..."
 ```
 
 #### `signTransaction(transaction, accountIndex?): SignedTransaction`
@@ -109,9 +111,9 @@ Represents a single keypair with signing capabilities.
 
 | Property | Type | Description |
 |---|---|---|
-| `address` | `string` | Omne address (`omne1...`) |
-| `publicKey` | `string` | ed25519 public key (64 hex chars) |
-| `privateKey` | `string` | ed25519 private key (64 hex chars) |
+| `address` | `string` | Omne address (`om1z...`) |
+| `publicKey` | `string` | ML-DSA-44 public key (1,312 bytes / 2,624 hex chars) |
+| `privateKey` | `string` | 32-byte ML-DSA-44 seed (64 hex chars) — the portable secret |
 | `path` | `string \| undefined` | BIP-44 derivation path (if HD-derived) |
 
 ### Methods
@@ -123,25 +125,25 @@ Sign a transaction with this account's private key. Returns the transaction with
 ```typescript
 const signed = account.signTransaction({
   from: account.address,
-  to: 'omne1recipient...',
+  to: 'om1zrecipient...',
   value: '1000000000000000000',
   gasLimit: 21000,
   gasPrice: '1000',
   nonce: 0,
 })
 
-console.log(signed.signature) // ed25519 signature, hex-encoded
+console.log(signed.signature) // ML-DSA-44 signature, hex-encoded
 ```
 
 **Signing process:**
-1. Canonical transaction message is constructed (little-endian numeric encoding)
+1. Canonical transaction message is constructed (little-endian numeric encoding, including `chainId`)
 2. SHA-256 hash of the message
-3. ed25519 signature over the hash
-4. Signature (64 bytes) concatenated with public key (32 bytes)
+3. ML-DSA-44 signature over the hash (2,420 bytes)
+4. The signed transaction carries the `signature` and the signer's `publicKey` (1,312 bytes), since ML-DSA has no key recovery
 
 #### `signMessage(message): string`
 
-Sign an arbitrary string message. Returns the signature + public key concatenated (hex-encoded).
+Sign an arbitrary string message. The message is SHA-256-hashed, then signed. Returns the 2,420-byte ML-DSA-44 signature concatenated with the 1,312-byte public key (3,732 bytes total, hex-encoded) — the public key is appended because ML-DSA has no key recovery, letting verifiers derive the signer address.
 
 ```typescript
 const sig = account.signMessage('Hello, Omne!')
@@ -208,10 +210,11 @@ manager.clear() // Remove everything
 
 | Parameter | Value |
 |---|---|
-| Mnemonic | BIP39, 12/15/18/21/24 words |
-| HD derivation | SLIP-0010 ed25519, all hardened |
-| Signing algorithm | ed25519 (no key recovery) |
-| Address derivation | `SHA256("OMNE_ADDRESS_V1" \|\| pubkey)[0..20]` |
-| Address encoding | `omne1{hex}` |
-| Keystore encryption | PBKDF2 + AES-256-GCM, JSON v3 |
-| Transaction hash | SHA-256 over canonical message format |
+| Mnemonic | BIP39, 12 words (128-bit entropy) |
+| HD derivation | HMAC-SHA512 hierarchical KDF, hardened-only, path `m/44'/60'/0'/0/{index}` → 32-byte ML-DSA-44 seed per account |
+| Signing algorithm | ML-DSA-44 (FIPS 204), no key recovery |
+| Key sizes | 32-byte seed (portable secret) → 1,312-byte public key, 2,560-byte secret key, 2,420-byte signature |
+| Address derivation | `SHA256("OMNE_PQC_ADDRESS_V1" \|\| ml_dsa_44_pubkey)` — full 32 bytes, no truncation |
+| Address encoding | `om1z…` — bech32m, HRP `om`, witness version 2 (`z`) |
+| Keystore encryption | PBKDF2 + AES-256-GCM, JSON v3 (stores the 32-byte seed) |
+| Transaction hash | SHA-256 over canonical message format (includes `chainId`) |
