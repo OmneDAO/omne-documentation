@@ -1,0 +1,26 @@
+// Cloudflare Workers + Static Assets configuration for docs.omne.foundation.
+//
+// Authority: /Users/gregbrown/github/omne/docs/project/docs-omne-foundation-site-strategy.md §4
+// + foundation operational lessons in memory project_omne_foundation_launched.
+//
+// run_worker_first: true is REQUIRED. Cloudflare's default false causes the
+// Worker to be bypassed for asset paths, which means any worker-level logic
+// (404 handling, header injection, future redirects) silently fails. Foundation
+// site observed this with the www→apex redirect; same trap applies here.
+//
+// assets.directory is "./out" because Next.js static export emits to out/
+// (not dist/ like the Foundation Astro build).
+//
+// assets.not_found_handling: "404-page" serves out/404.html on any unmatched
+// path (Nextra builds /404 as part of the static export).
+{
+  "name": "omne-documentation",
+  "main": "worker.js",
+  "compatibility_date": "2026-06-01",
+  "assets": {
+    "directory": "./out",
+    "binding": "ASSETS",
+    "not_found_handling": "404-page",
+    "run_worker_first": true
+  }
+}

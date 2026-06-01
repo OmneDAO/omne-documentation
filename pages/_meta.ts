@@ -9,5 +9,8 @@ export default {
   "sdk": "SDK Reference",
   "node-operations": "Node Operations",
   "architecture": "Architecture",
-  "api-reference": "API Reference"
+  "api-reference": "API Reference",
+  "notice": {
+    "display": "hidden"
+  }
 }

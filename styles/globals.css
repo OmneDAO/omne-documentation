@@ -1,0 +1,251 @@
+/*
+ * omne-docs — global styles
+ * Source of truth: omne-foundation/src/styles/tokens.css (token values copied verbatim)
+ *                  docs/project/omne-foundation-site-visual.md §2 §3 §4
+ *
+ * Discipline: tokens declared in :root (light) and prefers-color-scheme: dark.
+ * Nextra 3 prose selectors (`.nextra-content`, `article.nextra-body-typesetting-article`)
+ * are overridden to use the Foundation type families. No literal values in component CSS;
+ * components reference var(--token-name) only.
+ */
+
+:root {
+  /* Color tokens — light mode (visual §3.1 / §3.2 / §3.3) */
+  --paper: #FAFAF7;
+  --ink: #1A1A18;
+  --ink-soft: #5C5C58;
+  --divider: #E5E5DF;
+  --accent: #1E3A8A;
+  --state-live: #0F7A3B;
+  --state-paused: #A16207;
+  --state-inactive: var(--ink-soft);
+  --error: #991B1B;
+  --focus-ring: var(--accent);
+
+  /* Type families (visual §2.2) */
+  --font-serif: 'Source Serif 4 Variable', Georgia, 'Times New Roman', serif;
+  --font-sans: 'Inter Variable', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* Type scale — modular 1.2 ratio (visual §2.3) */
+  --text-xs: 0.75rem;      /* 12px */
+  --text-sm: 0.875rem;     /* 14px */
+  --text-base: 1.0625rem;  /* 17px */
+  --text-lg: 1.1875rem;    /* 19px */
+  --text-xl: 1.375rem;     /* 22px */
+  --text-2xl: 1.625rem;    /* 26px */
+  --text-3xl: 2rem;        /* 32px */
+  --text-4xl: 2.5rem;      /* 40px */
+
+  /* Spacing — 8px baseline (visual §4.3) */
+  --space-1: 0.5rem;   /* 8px */
+  --space-2: 1rem;     /* 16px */
+  --space-3: 1.5rem;   /* 24px */
+  --space-4: 2rem;     /* 32px */
+  --space-5: 3rem;     /* 48px */
+  --space-6: 4rem;     /* 64px */
+  --space-7: 6rem;     /* 96px */
+  --space-8: 8rem;     /* 128px */
+
+  /* Line heights (visual §2.4) */
+  --leading-body: 1.6;
+  --leading-heading: 1.2;
+  --leading-ui: 1.4;
+  --leading-mono: 1.5;
+
+  color-scheme: light;
+}
+
+/* Dark mode — auto, matches Foundation site (visual §3.4) */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #0E0E0C;
+    --ink: #EFEFEA;
+    --ink-soft: #9C9C96;
+    --divider: #2A2A26;
+    --accent: #7DA0FF;
+    --state-live: #4ADE80;
+    --state-paused: #FBBF24;
+    --error: #FCA5A5;
+
+    color-scheme: dark;
+  }
+}
+
+/* Nextra exposes a `.dark` class on <html> for its toggle; honor it too. */
+html.dark {
+  --paper: #0E0E0C;
+  --ink: #EFEFEA;
+  --ink-soft: #9C9C96;
+  --divider: #2A2A26;
+  --accent: #7DA0FF;
+  --state-live: #4ADE80;
+  --state-paused: #FBBF24;
+  --error: #FCA5A5;
+
+  color-scheme: dark;
+}
+
+/* ------------------------------------------------------------------
+ * Base — body typography in the Foundation token families.
+ * Nextra ships its own typesetting; these rules win via specificity
+ * by targeting the Nextra 3 content wrappers directly.
+ * ------------------------------------------------------------------ */
+
+html,
+body {
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: var(--leading-body);
+  background: var(--paper);
+  color: var(--ink);
+}
+
+/* Reading column — serif for long-form prose.
+ * Nextra 3 prose lives inside `article.nextra-body-typesetting-article`,
+ * which is itself inside `.nextra-content`. Target both forms for safety. */
+.nextra-content article p,
+.nextra-content article li,
+.nextra-content article blockquote,
+article.nextra-body-typesetting-article p,
+article.nextra-body-typesetting-article li,
+article.nextra-body-typesetting-article blockquote {
+  font-family: var(--font-serif);
+  font-size: var(--text-base);
+  line-height: var(--leading-body);
+  color: var(--ink);
+}
+
+/* Headings — serif, tight (visual §2.4) */
+.nextra-content article h1,
+.nextra-content article h2,
+.nextra-content article h3,
+.nextra-content article h4,
+article.nextra-body-typesetting-article h1,
+article.nextra-body-typesetting-article h2,
+article.nextra-body-typesetting-article h3,
+article.nextra-body-typesetting-article h4 {
+  font-family: var(--font-serif);
+  line-height: var(--leading-heading);
+  color: var(--ink);
+}
+
+.nextra-content article h1,
+article.nextra-body-typesetting-article h1 {
+  font-size: var(--text-4xl);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.nextra-content article h2,
+article.nextra-body-typesetting-article h2 {
+  font-size: var(--text-3xl);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin-block-start: var(--space-5);
+}
+
+.nextra-content article h3,
+article.nextra-body-typesetting-article h3 {
+  font-size: var(--text-2xl);
+  font-weight: 600;
+  margin-block-start: var(--space-4);
+}
+
+.nextra-content article h4,
+article.nextra-body-typesetting-article h4 {
+  font-size: var(--text-xl);
+  font-weight: 500;
+  margin-block-start: var(--space-3);
+}
+
+/* Code blocks — monospace token family (visual §6.5) */
+.nextra-content article code,
+.nextra-content article pre,
+article.nextra-body-typesetting-article code,
+article.nextra-body-typesetting-article pre,
+.nextra-code,
+.nextra-code code,
+.nextra-code pre {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  line-height: var(--leading-mono);
+  font-variant-ligatures: none; /* visual §2.2: ligatures off in monospace */
+}
+
+/* Links — accent color, underline on hover (visual §6.3) */
+.nextra-content article a,
+article.nextra-body-typesetting-article a {
+  color: var(--accent);
+  text-decoration: none;
+}
+.nextra-content article a:hover,
+article.nextra-body-typesetting-article a:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+  text-decoration-thickness: 1px;
+}
+
+/* Sidebar + TOC — sans (visual §2.1, UI register) */
+.nextra-sidebar-container,
+.nextra-sidebar-container a,
+.nextra-toc,
+.nextra-toc a,
+.nextra-nav-container,
+.nextra-nav-container a {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  line-height: var(--leading-ui);
+}
+
+/* ------------------------------------------------------------------
+ * Focus-visible ring (visual §10, §6.3)
+ * ------------------------------------------------------------------ */
+:focus {
+  outline: none;
+}
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* ------------------------------------------------------------------
+ * Pending-tokenomics callout — used by the TBD remediation for
+ * sections gated on the multi-agent tokenomics pass.
+ * ------------------------------------------------------------------ */
+.pending-tokenomics {
+  border: 1px solid var(--state-paused);
+  background: color-mix(in srgb, var(--state-paused) 8%, transparent);
+  padding: var(--space-2);
+  border-radius: 4px;
+  margin-block: var(--space-3);
+  font-size: var(--text-sm);
+  font-family: var(--font-sans);
+  line-height: var(--leading-ui);
+  color: var(--ink);
+}
+
+.pending-tokenomics::before {
+  content: "Pending";
+  font-weight: 600;
+  font-family: var(--font-sans);
+  color: var(--state-paused);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: var(--text-xs);
+  display: block;
+  margin-block-end: var(--space-1);
+}
+
+/* Reduced motion — visual §7 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

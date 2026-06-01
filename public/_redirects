@@ -1,0 +1,11 @@
+# omne-documentation Cloudflare Pages/Workers _redirects
+#
+# Authority: docs/project/docs-omne-foundation-site-strategy.md §4 (hosting)
+# + docs/project/omne-foundation-site-implementation-plan.md §6.1 (trailing-slash policy)
+#
+# Cloudflare Pages _redirects supports ONLY relative paths (same-host).
+# No cross-host redirects needed here (docs.omne.foundation has no www variant).
+
+# Trailing-slash policy — Nextra defaults to no-trailing-slash for routes;
+# variants with trailing slash 301 to canonical bare form.
+/:path/    /:path    301
