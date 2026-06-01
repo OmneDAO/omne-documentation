@@ -1,4 +1,4 @@
-import { DocsThemeConfig } from 'nextra-theme-docs'
+import { DocsThemeConfig, useConfig } from 'nextra-theme-docs'
 
 const config: DocsThemeConfig = {
   logo: (
@@ -15,15 +15,24 @@ const config: DocsThemeConfig = {
     link: 'https://github.com/OmneDAO/omne-documentation',
   },
   docsRepositoryBase: 'https://github.com/OmneDAO/omne-documentation/tree/master',
-  head: (
-    <>
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <meta name="description" content="Omne — Developer Documentation" />
-      <meta name="og:title" content="Omne Docs" />
-      <meta name="og:description" content="Developer documentation for the Omne L1 blockchain" />
-      <link rel="icon" href="/favicon.ico" />
-    </>
-  ),
+  head: function Head() {
+    const { frontMatter } = useConfig()
+    const pageTitle = frontMatter?.title
+      ? `${frontMatter.title} — Omne Documentation`
+      : 'Omne Documentation'
+    const pageDescription =
+      frontMatter?.description ?? 'Developer documentation for the Omne L1 blockchain'
+    return (
+      <>
+        <title>{pageTitle}</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="description" content={pageDescription} />
+        <meta name="og:title" content={pageTitle} />
+        <meta name="og:description" content={pageDescription} />
+        <link rel="icon" href="/favicon.ico" />
+      </>
+    )
+  },
   color: {
     hue: 222,
     saturation: 60,
