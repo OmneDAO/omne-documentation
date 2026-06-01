@@ -2,14 +2,19 @@ import { DocsThemeConfig } from 'nextra-theme-docs'
 
 const config: DocsThemeConfig = {
   logo: (
-    <span style={{ fontWeight: 700, fontSize: '1.15rem', letterSpacing: '-0.02em' }}>
-      Omne Docs
+    <span style={{
+      fontFamily: 'var(--font-serif)',
+      fontWeight: 600,
+      fontSize: '1.15rem',
+      letterSpacing: '-0.01em',
+    }}>
+      Omne — Documentation
     </span>
   ),
   project: {
-    link: 'https://github.com/OmneDAO',
+    link: 'https://github.com/OmneDAO/omne-documentation',
   },
-  docsRepositoryBase: 'https://github.com/OmneDAO/omne-docs/tree/master',
+  docsRepositoryBase: 'https://github.com/OmneDAO/omne-documentation/tree/master',
   head: (
     <>
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -20,8 +25,8 @@ const config: DocsThemeConfig = {
     </>
   ),
   color: {
-    hue: 160,
-    saturation: 70,
+    hue: 222,
+    saturation: 60,
   },
   sidebar: {
     defaultMenuCollapseLevel: 1,
